@@ -62,3 +62,6 @@ renv/staging/
 .mcp.json
 AGENTS.md
 CLAUDE.md
+
+# Internal checklists and notes
+ZENODO_READINESS_CHECKLIST.md
