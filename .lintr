@@ -1,0 +1,16 @@
+linters: linters_with_defaults(
+    # Suppress object_usage_linter for tidyverse/data.table NSE
+    object_usage_linter = NULL,
+    # Allow up to 100 characters per line (80 is often too restrictive for data science code)
+    line_length_linter = line_length_linter(100),
+    # Allow explicit returns (sometimes clearer)
+    return_linter = NULL,
+    # Allow snake_case and other naming conventions
+    object_name_linter = NULL
+  )
+exclusions: list(
+    # Exclude renv directory
+    "renv/",
+    # Exclude generated files
+    "_targets/"
+  )

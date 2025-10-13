@@ -1,0 +1,64 @@
+# R and RStudio
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Data files (link to original Zenodo deposit instead)
+original/
+data-raw/*.txt
+data/*.rds
+*.csv
+*.tsv
+
+# Targets cache (too large for GitHub)
+_targets/
+.drake/
+
+# System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary files
+*~
+*.swp
+*.swo
+.#*
+
+# IDE
+.vscode/
+.idea/
+
+# Package build
+*.tar.gz
+*.zip
+
+# Credentials and secrets
+.env
+.Renviron
+credentials.json
+
+# Large output files
+outputs/models/*.rds
+
+# renv package library (but keep renv.lock and renv.R)
+renv/library/
+renv/local/
+renv/cellar/
+renv/python/
+renv/sandbox/
+renv/staging/
+
+# Claude Code and MCP configuration (development only)
+.mcp.json
+AGENTS.md
+CLAUDE.md

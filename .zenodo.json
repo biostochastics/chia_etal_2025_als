@@ -1,0 +1,43 @@
+{
+  "title": "Confounding by geography and anticoagulant compromises proposed ALS diagnostic model and biomarkers: Re-analysis of Chia et al. (2025)",
+  "description": "Comprehensive reanalysis demonstrating severe confounding between plasma collection tube type, geographic origin, and diagnosis in an ALS biomarker study published in Nature Medicine. This repository includes: (1) leave-country-out cross-validation showing 18.2% performance drop, (2) stratified differential analysis revealing only 26.9% protein replication across cohorts, (3) identification of 22 tube-robust biomarker candidates, and (4) complete reproducible pipeline.",
+  "creators": [
+    {
+      "name": "Sergey A. Kornilov",
+      "affiliation": "Biostochastics, LLC"
+    }
+  ],
+  "keywords": [
+    "ALS",
+    "amyotrophic lateral sclerosis",
+    "biomarkers",
+    "confounding bias",
+    "proteomics",
+    "Olink",
+    "machine learning",
+    "cross-validation",
+    "geographic validation",
+    "reproducibility",
+    "leave-country-out",
+    "stratified analysis",
+    "Nature Medicine",
+    "reanalysis"
+  ],
+  "license": {
+    "id": "MIT"
+  },
+  "upload_type": "software",
+  "access_right": "open",
+  "related_identifiers": [
+    {
+      "identifier": "https://zenodo.org/records/16899551",
+      "relation": "isSupplementTo",
+      "resource_type": "dataset",
+      "scheme": "url"
+    }
+  ],
+  "notes": "This reanalysis uses the publicly available dataset from Chia et al. (2025) Zenodo deposit (https://zenodo.org/records/16899551). The raw data is NOT included in this repository - users must download it from the original source. All analysis code, test suite, and documentation are provided for full reproducibility.",
+  "version": "1.0.0",
+  "language": "eng",
+  "grants": []
+}

@@ -1,0 +1,1139 @@
+/* ================================================================
+   VIRIDIS-INSPIRED DARK THEME FOR ALS CONFOUNDING INVESTIGATION
+   Sophisticated dark palette modeled after viridis color scheme
+   Deep purples → greens → cyan → warm yellows
+   WCAG AA compliant with refined, cohesive aesthetics
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   COLOR PALETTE DEFINITION (Viridis-inspired)
+   ----------------------------------------------------------------
+   --viridis-dark: #440154 (deep purple, darkest)
+   --viridis-purple: #482677 (rich purple)
+   --viridis-blue: #3E4A89 (purple-blue)
+   --viridis-cyan: #31688E (deep cyan)
+   --viridis-teal: #26828E (teal)
+   --viridis-green: #1F9E89 (jade green)
+   --viridis-lime: #6CCE59 (bright lime)
+   --viridis-yellow: #FDE724 (vibrant yellow)
+
+   Background hierarchy:
+   --bg-base: #0B0B0F (ultra-dark purple-black)
+   --bg-surface: #151520 (dark purple-gray)
+   --bg-elevated: #1D1D2E (elevated surface)
+   ---------------------------------------------------------------- */
+
+:root {
+  --viridis-dark: #440154;
+  --viridis-purple: #482677;
+  --viridis-blue: #3E4A89;
+  --viridis-cyan: #31688E;
+  --viridis-teal: #26828E;
+  --viridis-green: #1F9E89;
+  --viridis-lime: #6CCE59;
+  --viridis-yellow: #FDE724;
+
+  --bg-base: #0B0B0F;
+  --bg-surface: #151520;
+  --bg-elevated: #1D1D2E;
+  --bg-hover: #252535;
+
+  --text-primary: #F5F5FA;
+  --text-secondary: #C8C8D0;
+  --text-muted: #9090A0;
+  --text-bright: #FFFFFF;
+}
+
+/* ----------------------------------------------------------------
+   SECTION HEADERS - Viridis gradient flow
+   ---------------------------------------------------------------- */
+.section h1 {
+  background: linear-gradient(135deg, var(--viridis-purple) 0%, var(--viridis-blue) 40%, var(--viridis-cyan) 100%);
+  color: var(--text-bright);
+  padding: 1.75rem 2rem;
+  border-radius: 12px;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border-left: 5px solid var(--viridis-lime);
+  border-bottom: 2px solid rgba(108, 206, 89, 0.3);
+  position: relative;
+}
+
+.section h1::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--viridis-lime) 0%,
+    var(--viridis-teal) 50%,
+    transparent 100%);
+  opacity: 0.5;
+}
+
+.section h2 {
+  color: var(--viridis-lime);
+  border-bottom: 3px solid var(--viridis-teal);
+  padding-bottom: 0.75rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  position: relative;
+}
+
+.section h2::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: linear-gradient(180deg, var(--viridis-lime), var(--viridis-teal));
+  border-radius: 2px;
+}
+
+.section h3 {
+  color: var(--viridis-cyan);
+  margin-top: 1.75rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ----------------------------------------------------------------
+   ENHANCED CALLOUTS - Viridis-themed with depth
+   ---------------------------------------------------------------- */
+
+.callout {
+  border-radius: 12px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(108, 206, 89, 0.04);
+  margin: 2rem 0;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(108, 206, 89, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.callout:hover {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(108, 206, 89, 0.06);
+  transform: translateY(-3px);
+  border-color: rgba(108, 206, 89, 0.25);
+}
+
+/* Important - Cyan-blue viridis tones (NO RED/PINK) */
+.callout-important,
+.callout.callout-important,
+div.callout-important {
+  border-left: 5px solid var(--viridis-cyan) !important;
+  border-color: var(--viridis-cyan) !important;
+  background: linear-gradient(
+    120deg,
+    rgba(49, 104, 142, 0.15) 0%,
+    var(--bg-surface) 50%,
+    var(--bg-surface) 100%
+  ) !important;
+  background-color: var(--bg-surface) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03) !important;
+}
+
+.callout-important .callout-header,
+.callout-important > .callout-header,
+.callout-important .callout-title {
+  background-color: transparent !important;
+  color: #5DC9E2 !important;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.callout-important .callout-body,
+.callout-important > .callout-body {
+  color: var(--text-secondary) !important;
+}
+
+.callout-important .callout-icon::before,
+.callout-important > .callout-header .callout-icon::before {
+  background-color: #5DC9E2 !important;
+}
+
+/* Warnings - Cyan-teal viridis tones (NO ORANGE/RED) */
+.callout-warning,
+.callout.callout-warning,
+div.callout-warning {
+  border-left: 5px solid var(--viridis-cyan) !important;
+  border-color: var(--viridis-cyan) !important;
+  background: linear-gradient(
+    120deg,
+    rgba(49, 104, 142, 0.15) 0%,
+    var(--bg-surface) 50%,
+    var(--bg-surface) 100%
+  ) !important;
+  background-color: var(--bg-surface) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03) !important;
+}
+
+.callout-warning .callout-header,
+.callout-warning > .callout-header,
+.callout-warning .callout-title {
+  background-color: transparent !important;
+  color: #5DC9E2 !important;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.callout-warning .callout-body,
+.callout-warning > .callout-body {
+  color: var(--text-secondary) !important;
+}
+
+.callout-warning .callout-icon::before,
+.callout-warning > .callout-header .callout-icon::before {
+  background-color: #5DC9E2 !important;
+}
+
+/* Cautions - Yellow viridis end for critical alerts (NO RED) */
+.callout-caution,
+.callout.callout-caution,
+div.callout-caution {
+  border-left: 5px solid #FDE724 !important;
+  border-color: #FDE724 !important;
+  background: linear-gradient(
+    120deg,
+    rgba(253, 231, 36, 0.08) 0%,
+    var(--bg-surface) 50%,
+    var(--bg-surface) 100%
+  ) !important;
+  background-color: var(--bg-surface) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03) !important;
+}
+
+.callout-caution .callout-header,
+.callout-caution > .callout-header,
+.callout-caution .callout-title {
+  background-color: transparent !important;
+  color: #FDE724 !important;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.callout-caution .callout-body,
+.callout-caution > .callout-body {
+  color: var(--text-secondary) !important;
+}
+
+.callout-caution .callout-icon::before,
+.callout-caution > .callout-header .callout-icon::before {
+  background-color: #FDE724 !important;
+}
+
+/* Notes - Green viridis mid-tones */
+.callout-note {
+  border-left: 5px solid var(--viridis-green) !important;
+  background: linear-gradient(
+    120deg,
+    rgba(31, 158, 137, 0.12) 0%,
+    var(--bg-surface) 50%,
+    var(--bg-surface) 100%
+  ) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+}
+
+.callout-note .callout-header {
+  background-color: transparent;
+  color: #45E0C5;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.callout-note .callout-body {
+  color: var(--text-secondary);
+}
+
+/* Tips - Lime viridis for positive guidance */
+.callout-tip {
+  border-left: 5px solid var(--viridis-lime) !important;
+  background: linear-gradient(
+    120deg,
+    rgba(108, 206, 89, 0.12) 0%,
+    var(--bg-surface) 50%,
+    var(--bg-surface) 100%
+  ) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+}
+
+.callout-tip .callout-header {
+  background-color: transparent;
+  color: var(--viridis-lime);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.callout-tip .callout-body {
+  color: var(--text-secondary);
+}
+
+/* ----------------------------------------------------------------
+   MODERN TABLE STYLING - Viridis accents
+   ---------------------------------------------------------------- */
+.table {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+  margin: 2rem 0;
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(108, 206, 89, 0.15);
+}
+
+.table thead th {
+  background: linear-gradient(135deg, var(--viridis-cyan) 0%, var(--viridis-teal) 100%);
+  color: var(--text-bright);
+  font-weight: 700;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  border: none;
+  border-bottom: 3px solid var(--viridis-lime);
+  letter-spacing: -0.01em;
+}
+
+.table tbody tr {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid rgba(108, 206, 89, 0.08);
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: rgba(31, 158, 137, 0.03);
+}
+
+.table tbody tr:hover {
+  background-color: var(--bg-elevated);
+  box-shadow: inset 0 0 0 1px rgba(93, 201, 226, 0.15);
+  transform: scale(1.002);
+}
+
+.table tbody td {
+  padding: 0.875rem 1.25rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Paged dataframe styling */
+.pagedtable {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(108, 206, 89, 0.15);
+}
+
+.pagedtable table {
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.pagedtable-footer {
+  background-color: var(--bg-elevated);
+  color: var(--text-muted);
+  border-top: 1px solid rgba(108, 206, 89, 0.1);
+}
+
+/* ----------------------------------------------------------------
+   TABSET PANELS - Viridis gradient navigation
+   ---------------------------------------------------------------- */
+.panel-tabset {
+  margin: 2rem 0;
+}
+
+.panel-tabset .nav-tabs {
+  border-bottom: 3px solid var(--viridis-teal);
+  margin-bottom: 1.5rem;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(90deg,
+    rgba(108, 206, 89, 0.05) 0%,
+    transparent 100%);
+  border-radius: 8px 8px 0 0;
+  padding: 0.5rem 0.5rem 0;
+}
+
+.panel-tabset .nav-tabs .nav-link {
+  color: var(--viridis-cyan);
+  font-weight: 600;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.875rem 1.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: transparent;
+  border-radius: 8px 8px 0 0;
+  margin: 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.panel-tabset .nav-tabs .nav-link:hover {
+  border-bottom-color: var(--viridis-lime);
+  background-color: rgba(108, 206, 89, 0.08);
+  color: var(--viridis-lime);
+  transform: translateY(-2px);
+}
+
+.panel-tabset .nav-tabs .nav-link.active {
+  color: var(--text-bright);
+  border-bottom-color: var(--viridis-lime);
+  background: linear-gradient(180deg,
+    rgba(49, 104, 142, 0.25) 0%,
+    rgba(38, 130, 142, 0.15) 100%);
+  font-weight: 700;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+}
+
+/* ----------------------------------------------------------------
+   FIGURE AND IMAGE STYLING - Deep viridis frame
+   ---------------------------------------------------------------- */
+figure {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(135deg,
+    var(--bg-surface) 0%,
+    rgba(31, 158, 137, 0.05) 100%);
+  border-radius: 12px;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+  border: 1px solid rgba(108, 206, 89, 0.2);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+figure:hover {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(108, 206, 89, 0.04);
+  border-color: rgba(108, 206, 89, 0.35);
+  transform: translateY(-3px);
+}
+
+figure img {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+figcaption {
+  margin-top: 1rem;
+  font-size: 0.925rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(108, 206, 89, 0.15);
+  text-align: center;
+}
+
+/* ----------------------------------------------------------------
+   CODE BLOCKS - Deep purple viridis tones
+   ---------------------------------------------------------------- */
+pre {
+  border-radius: 10px;
+  border-left: 5px solid var(--viridis-lime);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+  background: linear-gradient(135deg,
+    var(--viridis-dark) 0%,
+    #0D0D15 100%) !important;
+  padding: 1.25rem !important;
+  overflow-x: auto;
+}
+
+code {
+  background: linear-gradient(120deg,
+    rgba(72, 38, 119, 0.3) 0%,
+    rgba(49, 104, 142, 0.25) 100%) !important;
+  color: #5DC9E2 !important;
+  padding: 0.25rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.9em;
+  border: 1px solid rgba(93, 201, 226, 0.3);
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-variant-ligatures: common-ligatures;
+}
+
+pre code {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+}
+
+/* ----------------------------------------------------------------
+   STATISTICAL TERM HIGHLIGHTS
+   ---------------------------------------------------------------- */
+.stat-term {
+  border-bottom: 2px dotted var(--viridis-lime);
+  cursor: help;
+  color: var(--viridis-cyan);
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.stat-term:hover {
+  border-bottom-color: var(--viridis-cyan);
+  color: var(--viridis-lime);
+}
+
+/* ----------------------------------------------------------------
+   GENERAL BODY AND TEXT STYLING
+   ---------------------------------------------------------------- */
+body {
+  line-height: 1.7;
+  color: var(--text-secondary);
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(at 10% 10%, rgba(68, 1, 84, 0.08) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, rgba(31, 158, 137, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(49, 104, 142, 0.04) 0px, transparent 60%);
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+p {
+  margin-bottom: 1.25rem;
+  color: var(--text-secondary);
+}
+
+strong, b {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+em {
+  color: var(--viridis-cyan);
+  font-style: italic;
+}
+
+/* Links */
+a {
+  color: var(--viridis-cyan);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+a:hover {
+  border-bottom-color: var(--viridis-lime);
+  color: var(--viridis-lime);
+}
+
+/* Lists */
+ul, ol {
+  margin-bottom: 1.25rem;
+  padding-left: 2rem;
+}
+
+li {
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+}
+
+li::marker {
+  color: var(--viridis-lime);
+  font-weight: 700;
+}
+
+/* Horizontal rules - Viridis gradient sweep */
+hr {
+  border: none;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--viridis-purple) 10%,
+    var(--viridis-cyan) 30%,
+    var(--viridis-teal) 50%,
+    var(--viridis-lime) 70%,
+    var(--viridis-yellow) 90%,
+    transparent 100%);
+  margin: 3rem 0;
+  border-radius: 2px;
+}
+
+/* ----------------------------------------------------------------
+   BLOCKQUOTES - Viridis accents
+   ---------------------------------------------------------------- */
+blockquote {
+  border-left: 5px solid var(--viridis-teal);
+  background: linear-gradient(90deg,
+    rgba(31, 158, 137, 0.08) 0%,
+    var(--bg-surface) 50%);
+  padding: 1.25rem 1.75rem;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
+  font-style: italic;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  position: relative;
+}
+
+blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -0.5rem;
+  left: 1rem;
+  font-size: 4rem;
+  color: var(--viridis-teal);
+  opacity: 0.15;
+  font-family: Georgia, serif;
+  line-height: 1;
+}
+
+blockquote p {
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+/* ----------------------------------------------------------------
+   STICKY TOC FOR NAVIGATION - Viridis themed
+   ---------------------------------------------------------------- */
+#TOC {
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: linear-gradient(180deg,
+    var(--bg-surface) 0%,
+    rgba(31, 158, 137, 0.05) 100%);
+  border-right: 2px solid rgba(108, 206, 89, 0.2);
+  box-shadow:
+    6px 0 20px rgba(0, 0, 0, 0.4),
+    inset -1px 0 0 rgba(108, 206, 89, 0.03);
+  border-radius: 0 8px 8px 0;
+  padding: 1.5rem;
+}
+
+#TOC::-webkit-scrollbar {
+  width: 8px;
+}
+
+#TOC::-webkit-scrollbar-track {
+  background: var(--bg-elevated);
+  border-radius: 4px;
+}
+
+#TOC::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--viridis-teal), var(--viridis-lime));
+  border-radius: 4px;
+}
+
+#TOC::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--viridis-lime), var(--viridis-yellow));
+}
+
+#TOC a {
+  color: var(--text-muted);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid transparent;
+  margin-left: -0.75rem;
+  border-radius: 4px;
+}
+
+#TOC a:hover {
+  color: var(--viridis-lime);
+  background-color: rgba(108, 206, 89, 0.08);
+  border-left-color: var(--viridis-lime);
+}
+
+#TOC .active {
+  color: var(--text-bright) !important;
+  font-weight: 700;
+  background: linear-gradient(90deg,
+    rgba(49, 104, 142, 0.2) 0%,
+    transparent 100%);
+  border-left-color: var(--viridis-lime) !important;
+}
+
+/* ----------------------------------------------------------------
+   EXECUTIVE SUMMARY STYLING - Full viridis gradient
+   ---------------------------------------------------------------- */
+.unnumbered h1:first-of-type {
+  background: linear-gradient(135deg,
+    var(--viridis-purple) 0%,
+    var(--viridis-blue) 20%,
+    var(--viridis-cyan) 40%,
+    var(--viridis-teal) 60%,
+    var(--viridis-green) 80%,
+    var(--viridis-lime) 100%);
+  color: var(--text-bright);
+  border-left-color: var(--viridis-yellow);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+}
+
+/* ----------------------------------------------------------------
+   QUARTO NAVBAR AND SIDEBAR
+   ---------------------------------------------------------------- */
+.navbar {
+  background: linear-gradient(90deg,
+    var(--bg-base) 0%,
+    rgba(49, 104, 142, 0.1) 100%) !important;
+  border-bottom: 2px solid rgba(108, 206, 89, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+}
+
+.sidebar {
+  background: linear-gradient(180deg,
+    var(--bg-surface) 0%,
+    rgba(31, 158, 137, 0.05) 100%);
+  border-right: 2px solid rgba(108, 206, 89, 0.2);
+}
+
+/* ----------------------------------------------------------------
+   DATAFRAME STYLING
+   ---------------------------------------------------------------- */
+.dataframe {
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 1px solid rgba(108, 206, 89, 0.2);
+  border-radius: 8px;
+}
+
+.dataframe thead {
+  background: linear-gradient(135deg, var(--viridis-cyan), var(--viridis-teal));
+  color: var(--text-bright);
+  border-bottom: 3px solid var(--viridis-lime);
+}
+
+.dataframe tbody tr:hover {
+  background-color: var(--bg-hover);
+  box-shadow: inset 0 0 0 1px rgba(93, 201, 226, 0.15);
+}
+
+/* ----------------------------------------------------------------
+   PRINT MEDIA QUERIES
+   ---------------------------------------------------------------- */
+@media print {
+  .tab-content > .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  .nav-tabs {
+    display: none;
+  }
+
+  .callout, .table, figure, pre {
+    box-shadow: none !important;
+  }
+
+  .section h1 {
+    background: #31688E !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .callout, .table, figure {
+    page-break-inside: avoid;
+  }
+
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  body {
+    background-color: white !important;
+    color: #2C3E50 !important;
+  }
+
+  p, li, td {
+    color: #2C3E50 !important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   RESPONSIVE LAYOUT
+   ---------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .section h1 {
+    font-size: 1.5rem;
+    padding: 1.25rem;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .panel-tabset .nav-tabs .nav-link {
+    padding: 0.625rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ----------------------------------------------------------------
+   ACCESSIBILITY ENHANCEMENTS
+   ---------------------------------------------------------------- */
+
+a:focus,
+button:focus,
+.nav-link:focus {
+  outline: 3px solid var(--viridis-lime);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(108, 206, 89, 0.2);
+}
+
+@media (prefers-contrast: high) {
+  .section h1 {
+    background: var(--viridis-cyan);
+    border: 2px solid var(--viridis-yellow);
+  }
+
+  .callout {
+    border-width: 3px;
+  }
+
+  body {
+    background-color: #000000;
+    color: #FFFFFF;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   CUSTOM SCROLLBAR - Viridis themed
+   ---------------------------------------------------------------- */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg,
+    var(--viridis-teal) 0%,
+    var(--viridis-lime) 100%);
+  border-radius: 6px;
+  border: 2px solid var(--bg-surface);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg,
+    var(--viridis-lime) 0%,
+    var(--viridis-yellow) 100%);
+}
+
+/* ----------------------------------------------------------------
+   SELECTION STYLING
+   ---------------------------------------------------------------- */
+::selection {
+  background-color: rgba(49, 104, 142, 0.4);
+  color: var(--viridis-lime);
+}
+
+::-moz-selection {
+  background-color: rgba(49, 104, 142, 0.4);
+  color: var(--viridis-lime);
+}
+
+/* ----------------------------------------------------------------
+   BOOTSTRAP/QUARTO COLOR OVERRIDES - Force viridis everywhere
+   Eliminates all red, pink, orange, default blue colors
+   ---------------------------------------------------------------- */
+
+/* Text color utilities - viridis replacements */
+.text-primary,
+.text-info {
+  color: var(--viridis-cyan) !important;
+}
+
+.text-success {
+  color: var(--viridis-lime) !important;
+}
+
+.text-warning {
+  color: var(--viridis-yellow) !important;
+}
+
+.text-danger,
+.text-error {
+  color: #B794F6 !important; /* Purple instead of red */
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
+/* Background color utilities - viridis replacements */
+.bg-primary,
+.bg-info {
+  background-color: var(--viridis-cyan) !important;
+  color: var(--text-bright) !important;
+}
+
+.bg-success {
+  background-color: var(--viridis-green) !important;
+  color: var(--text-bright) !important;
+}
+
+.bg-warning {
+  background-color: var(--viridis-yellow) !important;
+  color: var(--bg-base) !important;
+}
+
+.bg-danger,
+.bg-error {
+  background-color: var(--viridis-purple) !important;
+  color: var(--text-bright) !important;
+}
+
+.bg-secondary {
+  background-color: var(--bg-surface) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Border color utilities */
+.border-primary,
+.border-info {
+  border-color: var(--viridis-cyan) !important;
+}
+
+.border-success {
+  border-color: var(--viridis-lime) !important;
+}
+
+.border-warning {
+  border-color: var(--viridis-yellow) !important;
+}
+
+.border-danger,
+.border-error {
+  border-color: #B794F6 !important;
+}
+
+/* Alert components - override Bootstrap defaults */
+.alert-primary,
+.alert-info {
+  background: linear-gradient(120deg, rgba(49, 104, 142, 0.15), var(--bg-surface)) !important;
+  border-left: 5px solid var(--viridis-cyan) !important;
+  color: #5DC9E2 !important;
+}
+
+.alert-success {
+  background: linear-gradient(120deg, rgba(31, 158, 137, 0.15), var(--bg-surface)) !important;
+  border-left: 5px solid var(--viridis-green) !important;
+  color: #45E0C5 !important;
+}
+
+.alert-warning {
+  background: linear-gradient(120deg, rgba(253, 231, 36, 0.08), var(--bg-surface)) !important;
+  border-left: 5px solid var(--viridis-yellow) !important;
+  color: #FDE724 !important;
+}
+
+.alert-danger,
+.alert-error {
+  background: linear-gradient(120deg, rgba(68, 1, 84, 0.15), var(--bg-surface)) !important;
+  border-left: 5px solid var(--viridis-purple) !important;
+  color: #B794F6 !important;
+}
+
+/* Badge components */
+.badge-primary,
+.badge-info {
+  background-color: var(--viridis-cyan) !important;
+  color: var(--text-bright) !important;
+}
+
+.badge-success {
+  background-color: var(--viridis-lime) !important;
+  color: var(--bg-base) !important;
+}
+
+.badge-warning {
+  background-color: var(--viridis-yellow) !important;
+  color: var(--bg-base) !important;
+}
+
+.badge-danger,
+.badge-error {
+  background-color: #B794F6 !important;
+  color: var(--text-bright) !important;
+}
+
+/* Button components */
+.btn-primary,
+.btn-info {
+  background: linear-gradient(135deg, var(--viridis-cyan), var(--viridis-teal)) !important;
+  border-color: var(--viridis-cyan) !important;
+  color: var(--text-bright) !important;
+}
+
+.btn-primary:hover,
+.btn-info:hover {
+  background: linear-gradient(135deg, var(--viridis-teal), var(--viridis-green)) !important;
+  border-color: var(--viridis-lime) !important;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--viridis-green), var(--viridis-lime)) !important;
+  border-color: var(--viridis-green) !important;
+  color: var(--text-bright) !important;
+}
+
+.btn-warning {
+  background: var(--viridis-yellow) !important;
+  border-color: var(--viridis-yellow) !important;
+  color: var(--bg-base) !important;
+}
+
+.btn-danger,
+.btn-error {
+  background: linear-gradient(135deg, var(--viridis-purple), var(--viridis-blue)) !important;
+  border-color: var(--viridis-purple) !important;
+  color: var(--text-bright) !important;
+}
+
+/* Link colors in different contexts */
+a.text-primary,
+a.text-info {
+  color: var(--viridis-cyan) !important;
+}
+
+a.text-success {
+  color: var(--viridis-lime) !important;
+}
+
+a.text-warning {
+  color: var(--viridis-yellow) !important;
+}
+
+a.text-danger,
+a.text-error {
+  color: #B794F6 !important;
+}
+
+/* Progress bars */
+.progress-bar-primary,
+.progress-bar-info {
+  background-color: var(--viridis-cyan) !important;
+}
+
+.progress-bar-success {
+  background-color: var(--viridis-lime) !important;
+}
+
+.progress-bar-warning {
+  background-color: var(--viridis-yellow) !important;
+}
+
+.progress-bar-danger,
+.progress-bar-error {
+  background-color: #B794F6 !important;
+}
+
+/* List group items */
+.list-group-item-primary,
+.list-group-item-info {
+  background-color: rgba(49, 104, 142, 0.15) !important;
+  border-color: var(--viridis-cyan) !important;
+  color: #5DC9E2 !important;
+}
+
+.list-group-item-success {
+  background-color: rgba(31, 158, 137, 0.15) !important;
+  border-color: var(--viridis-green) !important;
+  color: #45E0C5 !important;
+}
+
+.list-group-item-warning {
+  background-color: rgba(253, 231, 36, 0.08) !important;
+  border-color: var(--viridis-yellow) !important;
+  color: #FDE724 !important;
+}
+
+.list-group-item-danger,
+.list-group-item-error {
+  background-color: rgba(68, 1, 84, 0.15) !important;
+  border-color: var(--viridis-purple) !important;
+  color: #B794F6 !important;
+}
+
+/* Table row colors */
+.table-primary,
+.table-info,
+tr.table-primary,
+tr.table-info {
+  background-color: rgba(49, 104, 142, 0.15) !important;
+  color: var(--text-secondary) !important;
+}
+
+.table-success,
+tr.table-success {
+  background-color: rgba(31, 158, 137, 0.15) !important;
+  color: var(--text-secondary) !important;
+}
+
+.table-warning,
+tr.table-warning {
+  background-color: rgba(253, 231, 36, 0.08) !important;
+  color: var(--text-secondary) !important;
+}
+
+.table-danger,
+.table-error,
+tr.table-danger,
+tr.table-error {
+  background-color: rgba(68, 1, 84, 0.15) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Override any remaining default reds/pinks/oranges */
+[class*="red"],
+[class*="pink"],
+[class*="magenta"],
+[class*="fuschia"] {
+  color: #B794F6 !important;
+}
+
+[style*="red"],
+[style*="pink"],
+[style*="#ff"],
+[style*="#fe"],
+[style*="#fd"],
+[style*="rgb(255"] {
+  color: #B794F6 !important;
+}

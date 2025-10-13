@@ -1,0 +1,395 @@
+/* ================================================================
+   CUSTOM STYLES FOR ALS CONFOUNDING INVESTIGATION REPORT
+   Modern, accessible, and scientifically professional design
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   SECTION HEADERS - Gradient backgrounds with WCAG AA compliance
+   ---------------------------------------------------------------- */
+.section h1 {
+  background: linear-gradient(135deg, #2C5F7B 0%, #4A90B8 100%);
+  color: white;
+  padding: 1.5rem 1.5rem;
+  border-radius: 8px;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(44, 95, 123, 0.15);
+  font-weight: 600;
+  border-left: 5px solid #1A3A4A;
+}
+
+.section h2 {
+  color: #2C5F7B;
+  border-bottom: 3px solid #4A90B8;
+  padding-bottom: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.section h3 {
+  color: #3D6F8A;
+  margin-top: 1.5rem;
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------
+   ENHANCED CALLOUTS - Styling native Quarto callouts
+   ---------------------------------------------------------------- */
+
+/* Base callout improvements */
+.callout {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem 0;
+  transition: box-shadow 0.3s ease;
+}
+
+.callout:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Critical findings - orange/red gradient background */
+.callout-important {
+  border-left: 5px solid #E67E22 !important;
+  background: linear-gradient(90deg, #FFF5EE 0%, #FFFFFF 100%) !important;
+}
+
+.callout-important .callout-header {
+  background-color: transparent;
+  color: #C0392B;
+  font-weight: 600;
+}
+
+/* Warnings - amber gradient */
+.callout-warning {
+  border-left: 5px solid #F39C12 !important;
+  background: linear-gradient(90deg, #FFF9E6 0%, #FFFFFF 100%) !important;
+}
+
+.callout-warning .callout-header {
+  background-color: transparent;
+  color: #D68910;
+  font-weight: 600;
+}
+
+/* Cautions - red gradient for critical failures */
+.callout-caution {
+  border-left: 5px solid #E74C3C !important;
+  background: linear-gradient(90deg, #FFEBEE 0%, #FFFFFF 100%) !important;
+}
+
+.callout-caution .callout-header {
+  background-color: transparent;
+  color: #C0392B;
+  font-weight: 600;
+}
+
+/* Notes - blue gradient for informational content */
+.callout-note {
+  border-left: 5px solid #3498DB !important;
+  background: linear-gradient(90deg, #EBF5FB 0%, #FFFFFF 100%) !important;
+}
+
+.callout-note .callout-header {
+  background-color: transparent;
+  color: #2874A6;
+  font-weight: 600;
+}
+
+/* Tips - green gradient for recommendations */
+.callout-tip {
+  border-left: 5px solid #27AE60 !important;
+  background: linear-gradient(90deg, #E8F8F5 0%, #FFFFFF 100%) !important;
+}
+
+.callout-tip .callout-header {
+  background-color: transparent;
+  color: #1E8449;
+  font-weight: 600;
+}
+
+/* Collapsed callout styling */
+.callout.callout-style-default.collapse .callout-body {
+  padding-top: 1rem;
+}
+
+/* ----------------------------------------------------------------
+   MODERN TABLE STYLING
+   ---------------------------------------------------------------- */
+.table {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 1.5rem 0;
+}
+
+.table thead th {
+  background: linear-gradient(135deg, #2C5F7B 0%, #4A90B8 100%);
+  color: white;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border: none;
+}
+
+.table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #F8F9FA;
+}
+
+.table tbody tr:hover {
+  background-color: #E8F4F8;
+}
+
+.table tbody td {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid #DEE2E6;
+}
+
+/* Paged dataframe styling */
+.pagedtable {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ----------------------------------------------------------------
+   TABSET PANELS - Modern tabs
+   ---------------------------------------------------------------- */
+.panel-tabset {
+  margin: 1.5rem 0;
+}
+
+.panel-tabset .nav-tabs {
+  border-bottom: 2px solid #2C5F7B;
+  margin-bottom: 1rem;
+}
+
+.panel-tabset .nav-tabs .nav-link {
+  color: #2C5F7B;
+  font-weight: 500;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.panel-tabset .nav-tabs .nav-link:hover {
+  border-bottom-color: #4A90B8;
+  background-color: #F8F9FA;
+}
+
+.panel-tabset .nav-tabs .nav-link.active {
+  color: #1A3A4A;
+  border-bottom-color: #2C5F7B;
+  background-color: transparent;
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------------
+   FIGURE AND IMAGE STYLING
+   ---------------------------------------------------------------- */
+figure {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: #F8F9FA;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: #5A6C7D;
+  font-style: italic;
+}
+
+/* ----------------------------------------------------------------
+   CODE BLOCKS
+   ---------------------------------------------------------------- */
+pre {
+  border-radius: 6px;
+  border-left: 4px solid #2C5F7B;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+code {
+  background-color: #F4F6F8;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+/* ----------------------------------------------------------------
+   STATISTICAL TERM HIGHLIGHTS (for tooltips/popovers)
+   ---------------------------------------------------------------- */
+.stat-term {
+  border-bottom: 2px dotted #2C5F7B;
+  cursor: help;
+  color: #2C5F7B;
+  font-weight: 500;
+}
+
+/* ----------------------------------------------------------------
+   PRINT MEDIA QUERIES - Ensure tabsets print correctly
+   ---------------------------------------------------------------- */
+@media print {
+  /* Show all tab content when printing */
+  .tab-content > .tab-pane {
+    display: block !important;
+    opacity: 1 !important;
+  }
+
+  /* Hide tab navigation when printing */
+  .nav-tabs {
+    display: none;
+  }
+
+  /* Remove shadows and gradients for print */
+  .callout,
+  .table,
+  figure,
+  pre {
+    box-shadow: none !important;
+  }
+
+  .section h1 {
+    background: #2C5F7B !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Prevent page breaks inside important elements */
+  .callout,
+  .table,
+  figure {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure section headers stay with content */
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+}
+
+/* ----------------------------------------------------------------
+   RESPONSIVE LAYOUT IMPROVEMENTS
+   ---------------------------------------------------------------- */
+@media (max-width: 768px) {
+  .section h1 {
+    font-size: 1.5rem;
+    padding: 1rem;
+  }
+
+  .table {
+    font-size: 0.85rem;
+  }
+
+  .panel-tabset .nav-tabs .nav-link {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* ----------------------------------------------------------------
+   ACCESSIBILITY ENHANCEMENTS
+   ---------------------------------------------------------------- */
+
+/* Focus indicators for keyboard navigation */
+a:focus,
+button:focus,
+.nav-link:focus {
+  outline: 2px solid #2C5F7B;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .section h1 {
+    background: #1A3A4A;
+    border: 2px solid #FFFFFF;
+  }
+
+  .callout {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   STICKY TOC FOR BETTER NAVIGATION
+   ---------------------------------------------------------------- */
+#TOC {
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+/* ----------------------------------------------------------------
+   EXECUTIVE SUMMARY STYLING
+   ---------------------------------------------------------------- */
+.unnumbered h1:first-of-type {
+  background: linear-gradient(135deg, #C0392B 0%, #E74C3C 100%);
+  color: white;
+  border-left-color: #922B21;
+}
+
+/* ----------------------------------------------------------------
+   GENERAL SPACING AND TYPOGRAPHY IMPROVEMENTS
+   ---------------------------------------------------------------- */
+body {
+  line-height: 1.7;
+  color: #2C3E50;
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+strong {
+  color: #1A3A4A;
+  font-weight: 600;
+}
+
+/* Links */
+a {
+  color: #2C5F7B;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-bottom-color 0.2s ease;
+}
+
+a:hover {
+  border-bottom-color: #2C5F7B;
+}
+
+/* Lists */
+ul, ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+li {
+  margin-bottom: 0.5rem;
+}
+
+/* Horizontal rules */
+hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #2C5F7B 50%, transparent 100%);
+  margin: 2rem 0;
+}
