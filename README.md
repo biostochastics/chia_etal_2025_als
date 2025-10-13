@@ -11,7 +11,9 @@
 ## Read the Full Analysis
 
 **For comprehensive findings, methodology, and discussion:**
-**→ [Full Report: confounding_investigation.qmd](reports/confounding_investigation.qmd)**
+**→ [📄 Full Published Report](https://biostochastics.quarto.pub/confounding-by-geography-and-anticoagulant-compromises-proposed-als-diagnostic-model-and-biomarkers-d667/)**
+
+*(Source: [confounding_investigation.qmd](reports/confounding_investigation.qmd))*
 
 ---
 

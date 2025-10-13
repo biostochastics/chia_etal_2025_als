@@ -1,0 +1,4 @@
+- source: confounding_investigation.qmd
+  quarto-pub:
+    - id: c6e2a531-dbb4-43cc-a2d7-c0a86dcc757d
+      url: https://biostochastics.quarto.pub/confounding-by-geography-and-anticoagulant-compromises-proposed-als-diagnostic-model-and-biomarkers-d667
