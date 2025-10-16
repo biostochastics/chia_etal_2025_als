@@ -2,7 +2,7 @@
 title: "Confounding by geography and anticoagulant compromises proposed ALS diagnostic model and biomarkers"
 subtitle: "Re-analysis of Chia et al. (2025)"
 author: "Sergey A. Kornilov, PhD (Biostochastics, LLC)"
-date: today
+date: "2025-10-15"
 bibliography: references.bib
 csl: nature.csl
 link-citations: true
@@ -19,33 +19,64 @@ format:
     code-tools: true
     df-print: paged
     self-contained: true
-    theme: darkly
     css: custom-styles-dark.css
     embed-resources: true
     fig-width: 10
     fig-height: 7
     smooth-scroll: true
     link-external-newwindow: true
+    lof: true
+    lightbox: true
+    lot: true
 execute:
-  cache: true
+  cache: false
   warning: false
   message: false
   echo: true
+execute-dir: project
 ---
+
+::: {style="text-align: right; margin-bottom: 1rem;"}
+<div style="display: inline-block; padding: 0.5rem 1rem; border: 1px solid #444; border-radius: 0.5rem; background: rgba(0,0,0,0.2);">
+<span style="font-weight: bold; font-size: 0.9rem; margin-right: 0.5rem;">Links:</span>
+<a href="https://www.nature.com/articles/s41591-025-03890-6.pdf" title="Article PDF" style="text-shadow: 0 0 8px rgba(108, 206, 89, 0.4); margin: 0 0.4rem;"><i class="bi bi-file-pdf"></i></a>
+<a href="https://zenodo.org/records/16899551" title="Original Data (Zenodo)" style="text-shadow: 0 0 8px rgba(108, 206, 89, 0.4); margin: 0 0.4rem;"><i class="bi bi-database"></i></a>
+<a href="https://github.com/biostochastics/chia_etal_2025_als" title="Code (GitHub)" style="text-shadow: 0 0 8px rgba(108, 206, 89, 0.4); margin: 0 0.4rem;"><i class="bi bi-github"></i></a>
+<a href="mailto:sergey.kornilov@biostochastics.com" title="Contact" style="text-shadow: 0 0 8px rgba(108, 206, 89, 0.4); margin: 0 0.4rem;"><i class="bi bi-envelope"></i></a>
+</div>
+:::
+
+::: {.callout-note appearance="minimal"}
+## Author Contact & Data Acknowledgment
+We thank the authors for making the underlying data publicly available. We contacted the corresponding authors on 09/10/25 requesting geographic metadata and received no response, necessitating label reconstruction from sample identifiers. We shared a draft of this reanalysis on 10/13/25 prior to formal submission but received no formal or informal response of acknowledgment. Recognizing the impact of the federal shutdown on the NIH workers, we attempted to reach out the authors again once the shutdown was in progress, this time via social media. We received no response.
+
+:::
 
 ```{r setup}
 #| include: false
+
 
 library(targets)
 library(tidyverse)
 library(knitr)
 library(patchwork)
+library(here)
 
 # Source utility functions for dark theme
-source("../R/99_utils.R")
+source(here::here("R/99_utils.R"))
 
-# Set dark theme globally for all plots
-theme_set(theme_dark_scientific(base_size = 12))
+# Source appendix helper functions
+# source("R/appendix_helpers.R") # Temporarily disabled
+
+# Set dark theme globally for all plots with dark background matching CSS
+theme_set(
+  theme_dark_scientific(base_size = 12) +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    plot.margin = margin(2, 2, 2, 2)
+  )
+)
 
 # Set viridis-inspired default color scales
 options(
@@ -53,50 +84,50 @@ options(
   ggplot2.discrete.fill = viridis_dark_palette
 )
 
+# Set figure device to ragg with dark background
+knitr::opts_chunk$set(
+  dev = "ragg_png",
+  dev.args = list(bg = "#151520")
+)
+
 # Load all pipeline results
 tar_load(c(
   sample_metadata,
   reverse_prediction_results,
+  top_proteins_tube_prediction,
+  biomarker_tube_prediction,
+  concordant_tube_prediction,
   model_with_tube,
   model_without_tube,
   lcv_results,
   pooled_cv_results,
   pooled_vs_lcv_comparison,
+  within_country_cv_results,
   differential_italy,
   differential_us,
   differential_pooled,
   protein_concordance,
   stratified_vs_pooled_comparison,
+  plot_pca,
   investigation_summary
 ))
 ```
 
-# Executive Summary {.unnumbered}
-
-::: {.callout-note}
-## Report Context
-
-This technical report accompanies correspondence to *Nature Medicine* regarding methodological concerns in a recently published ALS biomarker study. This is the revised draft incorporating crucial findings from residual confounding analysis.
-
-**Full Reference:** @chia2025
-
-**DOI:** https://doi.org/10.1038/s41591-025-03890-6
-**Article URL:** https://www.nature.com/articles/s41591-025-03890-6
-:::
+# <i class="bi bi-clipboard-data"></i> Executive Summary {.unnumbered}
 
 ## Key Findings
 
 This investigation examines severe confounding bias in the published ALS biomarker study [@chia2025]. Our reanalysis reveals critical methodological concerns:
 
-::: {.callout-important}
-## Critical Finding #1: Proteins Predict Tube Type
+::: {.callout-important appearance="minimal"}
+## <i class="bi bi-exclamation-triangle-fill"></i> Critical Finding #1: Proteins Predict Tube Type
 **Reverse Prediction AUC: `r sprintf("%.3f", reverse_prediction_results$auc)`**
 
 Proteins can predict plasma collection tube type with near-perfect accuracy, indicating tube type signal dominates biological signal.
 :::
 
-::: {.callout-important}
-## Critical Finding #2: Geographic Generalization Failure
+::: {.callout-important appearance="minimal"}
+## <i class="bi bi-exclamation-triangle-fill"></i> Critical Finding #2: Geographic Generalization Failure
 **Performance Gap: `r sprintf("%.3f", pooled_vs_lcv_comparison$auc_gap)` (`r sprintf("%.1f%%", pooled_vs_lcv_comparison$percent_drop)` drop)**
 
 - Pooled CV AUC: `r sprintf("%.3f", pooled_vs_lcv_comparison$pooled_auc)`
@@ -105,7 +136,7 @@ Proteins can predict plasma collection tube type with near-perfect accuracy, ind
 Models trained on one geographic cohort fail to generalize to another.
 :::
 
-::: {.callout-important}
+::: {.callout-important appearance="minimal"}
 ## Critical Finding #3: Differential Analysis Confounding
 **Only `r sprintf("%.1f%%", stratified_vs_pooled_comparison$pct_replicate_in_both)` of pooled proteins replicate in both strata**
 
@@ -115,7 +146,7 @@ Models trained on one geographic cohort fail to generalize to another.
 - **Both strata: `r length(stratified_vs_pooled_comparison$sig_both_strata)`**
 :::
 
-::: {.callout-important}
+::: {.callout-important appearance="minimal"}
 ## Critical Finding #4: UK Biobank External Validation
 **Reported 99.1% AUC on simplified validation task**
 
@@ -134,7 +165,7 @@ While some biological signal exists (22 tube-robust proteins identified), most p
 
 ---
 
-# Introduction
+# <i class="bi bi-book"></i> Introduction
 
 @chia2025 reported a plasma proteomics-based biomarker panel for ALS diagnosis with reported 98% accuracy. However, their machine learning model identified plasma collection tube type (HEPARIN vs. EDTA) as the **2nd most important feature** out of 2,869 total features—a critical red flag indicating potential confounding. This investigation reveals that tube type is perfectly confounded with geographic origin (Italy/HEPARIN vs. US/EDTA) and diagnostic distribution: **100% of neurological controls (patients with other neurological diseases; OND) are EDTA**, 85% of ALS cases are HEPARIN, and zero neurological controls use HEPARIN tubes (@tbl-confounding). This confounding structure renders biological disease signals non-identifiable under the observed design—effects cannot be disentangled from technical artifacts related to sample collection, processing site, and anticoagulant chemistry without balanced experimental designs that orthogonalize tube type and disease status.
 
@@ -176,7 +207,7 @@ For readers interested in the statistical frameworks and computational details u
 
 ---
 
-# Methods
+# <i class="bi bi-gear-fill"></i> Methods
 
 ## Overview of Reanalysis Approach
 
@@ -215,29 +246,10 @@ The original dataset did not include explicit country labels. We reconstructed g
 #| echo: false
 #| label: fig-confounding-structure
 #| fig-cap: "Perfect confounding structure: Diagnosis × Tube Type × Country"
-#| fig-width: 12
-#| fig-height: 8
+#| fig-width: 14
+#| fig-height: 10
 
 library(patchwork)
-
-# Define dark theme modifications for consistent styling
-dark_theme_mods <- theme(
-  plot.background = element_rect(fill = "#0B0B0F", color = NA),
-  panel.background = element_rect(fill = "#151520", color = NA),
-  panel.grid.major = element_line(color = "#252535", size = 0.3),
-  panel.grid.minor = element_line(color = "#1D1D2E", size = 0.2),
-  text = element_text(color = "#F5F5FA"),
-  axis.text = element_text(color = "#C8C8D0", size = 10),
-  axis.title = element_text(color = "#F5F5FA", size = 11, face = "bold"),
-  plot.title = element_text(color = "#6CCE59", size = 12, face = "bold"),
-  plot.subtitle = element_text(color = "#9090A0", size = 9),
-  legend.background = element_rect(fill = "#151520", color = "#252535"),
-  legend.key = element_rect(fill = "#151520", color = NA),
-  legend.text = element_text(color = "#C8C8D0", size = 9),
-  legend.title = element_text(color = "#F5F5FA", size = 10, face = "bold"),
-  strip.background = element_rect(fill = "#1D1D2E", color = "#31688E"),
-  strip.text = element_text(color = "#6CCE59", size = 10, face = "bold")
-)
 
 # Plot 1: Stacked bar by diagnosis showing tube type
 p1 <- ggplot(sample_metadata, aes(x = Diagnosis, fill = Plasma_collection_tube_type)) +
@@ -253,11 +265,8 @@ p1 <- ggplot(sample_metadata, aes(x = Diagnosis, fill = Plasma_collection_tube_t
     y = "Proportion",
     subtitle = "Note: 100% of OND are EDTA, 85% of ALS are HEPARIN"
   ) +
-  dark_theme_mods +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 0, hjust = 0.5, color = "#C8C8D0")
-  )
+  theme_dark_scientific(base_size = 11) +
+  theme_zero_margins()
 
 # Plot 2: Counts by diagnosis and tube type
 p2 <- ggplot(sample_metadata, aes(x = Diagnosis, fill = Plasma_collection_tube_type)) +
@@ -281,11 +290,8 @@ p2 <- ggplot(sample_metadata, aes(x = Diagnosis, fill = Plasma_collection_tube_t
     y = "Count",
     subtitle = "Perfect confounding: OND × HEPARIN = 0 samples"
   ) +
-  dark_theme_mods +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 0, hjust = 0.5, color = "#C8C8D0")
-  )
+  theme_dark_scientific(base_size = 11) +
+  theme_zero_margins()
 
 # Plot 3: Country by diagnosis
 p3 <- ggplot(sample_metadata, aes(x = Diagnosis, fill = country)) +
@@ -300,11 +306,8 @@ p3 <- ggplot(sample_metadata, aes(x = Diagnosis, fill = country)) +
     x = "Diagnosis",
     y = "Proportion"
   ) +
-  dark_theme_mods +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(angle = 0, hjust = 0.5, color = "#C8C8D0")
-  )
+  theme_dark_scientific(base_size = 11) +
+  theme_zero_margins()
 
 # Plot 4: Faceted by country showing tube-diagnosis relationship
 p4 <- ggplot(sample_metadata, aes(x = country, fill = Plasma_collection_tube_type)) +
@@ -319,28 +322,40 @@ p4 <- ggplot(sample_metadata, aes(x = country, fill = Plasma_collection_tube_typ
     x = "Country",
     y = "Number of Samples"
   ) +
-  dark_theme_mods +
-  theme(
-    legend.position = "bottom",
-    axis.text.x = element_text(color = "#C8C8D0")
-  )
+  theme_dark_scientific(base_size = 11) +
+  theme_zero_margins()
 
 # Combine plots with dark theme annotation
-(p1 + p2) / (p3 + p4) +
+(p1 + p2) / p3 +
   plot_annotation(
     title = "Perfect Confounding Structure: Diagnosis × Tube Type × Country",
     subtitle = "Italy = HEPARIN only | US = EDTA only | All OND = EDTA/US",
-    theme = theme(
-      plot.background = element_rect(fill = "#0B0B0F", color = NA),
-      panel.background = element_rect(fill = "#0B0B0F", color = NA),
-      plot.title = element_text(size = 16, face = "bold", color = "#6CCE59"),
-      plot.subtitle = element_text(size = 12, color = "#C8C8D0")
-    )
+    theme = theme_dark_scientific(base_size = 12) +
+      theme_centered_titles() &
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA)
+  )
   ) &
-  theme(plot.background = element_rect(fill = "#0B0B0F", color = NA))
+  theme_zero_margins()
 ```
 
 ## Confounding Structure Quantification
+
+```{r pca-visualization}
+#| echo: false
+#| label: fig-pca-tube-diagnosis
+#| fig-cap: "PCA visualization showing protein expression variance driven by tube type rather than diagnosis"
+#| fig-width: 12
+#| fig-height: 14
+#| out-width: "100%"
+
+# Load and display the PCA visualization from targets
+plot_pca$plot
+```
+
+**Key Observation:** Principal Component Analysis reveals that tube type (HEPARIN vs EDTA) explains far more variance in protein expression (PC1: 17.3%) than biological disease groups. When colored by tube type, samples show clear separation along PC1, whereas coloring by diagnosis shows minimal separation. This visual confirmation demonstrates that technical factors dominate the variance structure of the dataset.
+
 
 ### Statistical Framework
 
@@ -599,7 +614,7 @@ We acknowledge the following limitations:
 
 ---
 
-# Results
+# <i class="bi bi-bar-chart"></i> Results
 
 ## Confounding Quantification
 
@@ -644,24 +659,135 @@ Using @cohen1988 effect size conventions for contingency tables with df=2: value
 ## Reverse Prediction Test: Strong Evidence for Technical Confounding
 
 ```{r reverse-prediction}
-#| echo: false
+#| code-fold: true
 #| label: fig-reverse-roc
-#| fig-cap: "ROC curve for predicting tube type from proteins"
+#| fig-cap: "ROC curves for predicting tube type from three protein sets"
+#| fig-width: 10
+#| fig-height: 8
+#| out-width: "100%"
 
-knitr::include_graphics("../outputs/figures/reverse_prediction_roc.png")
+library(ggplot2)
+library(pROC)
+library(dplyr)
+
+# Create labels
+full_label <- sprintf("Full Model (AUC = %.3f)", reverse_prediction_results$auc)
+top_label <- sprintf("Top 10 Proteins (AUC = %.3f)", top_proteins_tube_prediction$auc)
+biomarker_label <- sprintf("Original Biomarkers (AUC = %.3f)", biomarker_tube_prediction$auc)
+concordant_label <- sprintf("Concordant Proteins (AUC = %.3f)", concordant_tube_prediction$auc)
+
+# Extract predictions and calculate ROC curves
+# Full model
+full_preds <- reverse_prediction_results$model$pred %>%
+  dplyr::filter(
+    mtry == reverse_prediction_results$model$bestTune$mtry,
+    min.node.size == reverse_prediction_results$model$bestTune$min.node.size
+  )
+roc_full <- pROC::roc(
+  response = full_preds$obs,
+  predictor = full_preds$HEPARIN,
+  levels = c("EDTA", "HEPARIN"),
+  direction = "<"
+)
+
+# Top 10 proteins
+top_preds <- top_proteins_tube_prediction$predictions
+roc_top <- pROC::roc(
+  response = top_preds$obs,
+  predictor = top_preds$HEPARIN,
+  levels = c("EDTA", "HEPARIN"),
+  direction = "<"
+)
+
+# Original biomarkers
+biomarker_preds <- biomarker_tube_prediction$predictions
+roc_biomarker <- pROC::roc(
+  response = biomarker_preds$obs,
+  predictor = biomarker_preds$HEPARIN,
+  levels = c("EDTA", "HEPARIN"),
+  direction = "<"
+)
+
+# Concordant proteins
+concordant_preds <- concordant_tube_prediction$predictions
+roc_concordant <- pROC::roc(
+  response = concordant_preds$obs,
+  predictor = concordant_preds$HEPARIN,
+  levels = c("EDTA", "HEPARIN"),
+  direction = "<"
+)
+
+# Combine ROC data
+roc_combined <- rbind(
+  data.frame(
+    fpr = 1 - roc_full$specificities,
+    tpr = roc_full$sensitivities,
+    model = full_label
+  ),
+  data.frame(
+    fpr = 1 - roc_top$specificities,
+    tpr = roc_top$sensitivities,
+    model = top_label
+  ),
+  data.frame(
+    fpr = 1 - roc_biomarker$specificities,
+    tpr = roc_biomarker$sensitivities,
+    model = biomarker_label
+  ),
+  data.frame(
+    fpr = 1 - roc_concordant$specificities,
+    tpr = roc_concordant$sensitivities,
+    model = concordant_label
+  )
+)
+
+# Create color mapping with 4 distinct colors
+color_values <- c("#FDE724", "#1F9E89", "#B5DE2B", "#31688E")
+names(color_values) <- c(full_label, top_label, biomarker_label, concordant_label)
+
+# Create plot
+ggplot(roc_combined, aes(x = fpr, y = tpr, color = model)) +
+  geom_line(linewidth = 2.5, alpha = 0.9) +
+  geom_abline(
+    slope = 1, intercept = 0, linetype = "dashed",
+    color = "#71717A", linewidth = 1
+  ) +
+  scale_color_manual(
+    name = NULL,
+    values = color_values
+  ) +
+  labs(
+    title = "Reverse Prediction Test: Predicting Tube Type from Proteins",
+    subtitle = "AUC = 0.999 - Near-perfect discrimination indicates tube effects dominate",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.background = element_rect(fill = "#151520", colour = NA),
+    legend.key = element_rect(fill = "#151520", colour = NA),
+    legend.position = c(0.65, 0.25)
+  ) +
+  coord_equal()
 ```
 
-**Result: AUC = `r sprintf("%.3f", reverse_prediction_results$auc)`**
+**Results:**
+- **Full Model (all proteins):** AUC = `r sprintf("%.3f", reverse_prediction_results$auc)` (99.7% sensitivity, 94.8% specificity)
+- **Top 10 Proteins:** AUC = `r sprintf("%.3f", top_proteins_tube_prediction$auc)`
+- **Original Biomarkers (Chia et al. 17-protein panel):** AUC = `r sprintf("%.3f", biomarker_tube_prediction$auc)` (n=`r biomarker_tube_prediction$n_biomarkers` proteins)
+- **Concordant Proteins (significant in both cohorts):** AUC = `r sprintf("%.3f", concordant_tube_prediction$auc)` (n=`r concordant_tube_prediction$n_biomarkers` proteins)
 
-**Key Performance Metrics:**
-- **Sensitivity:** `r sprintf("%.3f", reverse_prediction_results$sensitivity)` (99.7% of HEPARIN samples correctly identified)
-- **Specificity:** `r sprintf("%.3f", reverse_prediction_results$specificity)` (94.8% of EDTA samples correctly identified)
+The reverse prediction test produces a compelling result with important implications for interpreting the published biomarker claims. By training classifiers to predict plasma collection tube type (HEPARIN vs. EDTA) from protein expression profiles alone—excluding all clinical metadata—we demonstrate that tube type effects are pervasive across multiple protein sets. The full model achieves near-perfect discrimination (AUC = 0.999), while even the top 10 most tube-discriminative proteins achieve exceptional performance (AUC = `r sprintf("%.3f", top_proteins_tube_prediction$auc)`).
 
-The reverse prediction test produces a compelling result with important implications for interpreting the published biomarker claims. By training a Random Forest classifier to predict plasma collection tube type (HEPARIN vs. EDTA) from protein expression profiles alone—excluding all clinical metadata—we achieved an AUC of 0.999, indicating near-perfect discrimination. This performance is notable: the protein measurements are **more informative about the technical collection method than they are about ALS disease status** (original study reported 98% accuracy for disease prediction). The fact that anticoagulant choice can be predicted with 99.7% sensitivity and 94.8% specificity indicates that tube type effects dominate the variance structure in the proteomics data, overwhelming genuine biological disease signals.
+**Critically, both biomarker panels show substantial tube-type confounding**: the original study's 17-protein panel achieves AUC = `r sprintf("%.3f", biomarker_tube_prediction$auc)` for predicting tube type, while our concordant proteins (those significant in both Italy and US with concordant direction, n=`r concordant_tube_prediction$n_biomarkers`) achieve AUC = `r sprintf("%.3f", concordant_tube_prediction$auc)`. These findings indicate that even proteins that successfully replicate across independent cohorts remain significantly confounded by technical collection factors.
 
-This finding serves as a critical diagnostic for technical confounding because it reveals that the protein abundance patterns systematically differ between EDTA and HEPARIN samples to such an extent that machine learning algorithms can readily distinguish them. When combined with the perfect confounding structure—where 100% of neurological controls are EDTA and 85% of ALS cases are HEPARIN—this result indicates that any disease classifier trained on pooled data will inevitably learn to recognize anticoagulant-associated protein signatures rather than ALS-specific biology. The reverse prediction test thus provides strong diagnostic evidence for the presence of severe technical confounding, regardless of whether specific proteins are genuinely disease-associated. Even if some ALS biomarkers exist within the dataset, their signals are thoroughly entangled with anticoagulant effects that must be addressed through stratified analysis or balanced study designs.
+These findings are particularly striking because the protein measurements are **more informative about the technical collection method than they are about ALS disease status** (original study reported 98% accuracy for disease prediction). This reversed diagnostic priority reveals that tube type effects dominate the variance structure in the proteomics data, overwhelming genuine biological disease signals. When combined with the perfect confounding structure—where 100% of neurological controls are EDTA and 85% of ALS cases are HEPARIN—these results indicate that any disease classifier trained on pooled data will inevitably learn to recognize anticoagulant-associated protein signatures rather than ALS-specific biology.
 
-::: {.callout-important}
+The reverse prediction test thus provides strong diagnostic evidence for the presence of severe technical confounding across all protein sets, from the full panel to the curated biomarkers. Even if some ALS biomarkers exist within the dataset, their signals are thoroughly entangled with anticoagulant effects that must be addressed through stratified analysis or balanced study designs.
+
+::: {.callout-important appearance="minimal"}
 ## Interpretation
 
 An AUC of 0.999 indicates proteins can **near-perfectly distinguish tube type**. This provides strong evidence that:
@@ -687,11 +813,201 @@ reverse_prediction_results$top_features %>%
 ## Geographic Validation: Leave-Country-Out CV
 
 ```{r lcv-roc}
-#| echo: false
+#| code-fold: true
 #| label: fig-lcv-roc
-#| fig-cap: "ROC curves comparing pooled CV vs leave-country-out CV"
+#| fig-cap: "ROC curves, confusion matrices, and performance metrics comparing Original (within-country, pooled) vs Reanalysis (cross-country) validation strategies"
+#| fig-width: 24
+#| out-width: "100%"
+#| fig-height: 18
 
-knitr::include_graphics("../outputs/figures/01_lcv_roc_curves.png")
+library(ggplot2)
+library(pROC)
+library(patchwork)
+library(dplyr)
+
+# Extract ROC curves
+roc_italy_to_us <- lcv_results$italy_to_us$roc_curve
+roc_us_to_italy <- lcv_results$us_to_italy$roc_curve
+roc_italy_within <- within_country_cv_results$italy$roc_obj
+roc_us_within <- within_country_cv_results$us$roc_obj
+roc_pooled <- pooled_cv_results$roc_obj
+
+# Create labels with AUCs
+pooled_label <- sprintf("Pooled (%.3f)", pooled_cv_results$cv_auc)
+italy_within_label <- sprintf("Italy (%.3f)", within_country_cv_results$italy$cv_auc)
+us_within_label <- sprintf("US (%.3f)", within_country_cv_results$us$cv_auc)
+italy_label <- sprintf("Italy→US (%.3f)", lcv_results$italy_to_us$test_auc)
+us_label <- sprintf("US→Italy (%.3f)", lcv_results$us_to_italy$test_auc)
+
+# ==============================================================================
+# PANEL A: ORIGINAL VALIDATION (WITHIN-COUNTRY + POOLED)
+# ==============================================================================
+roc_original <- rbind(
+  data.frame(
+    specificity = 1 - roc_pooled$specificities,
+    sensitivity = roc_pooled$sensitivities,
+    model = pooled_label
+  ),
+  data.frame(
+    specificity = 1 - roc_italy_within$specificities,
+    sensitivity = roc_italy_within$sensitivities,
+    model = italy_within_label
+  ),
+  data.frame(
+    specificity = 1 - roc_us_within$specificities,
+    sensitivity = roc_us_within$sensitivities,
+    model = us_within_label
+  )
+)
+
+# Define colors for Panel A
+colors_panel_a <- c(
+  "#FDE724",  # Pooled - Bright yellow (viridis 100%)
+  "#1F9E89",  # Italy - Jade/teal (viridis 60%)
+  "#B5DE2B"   # US - Yellow-green (viridis 90%)
+)
+names(colors_panel_a) <- c(pooled_label, italy_within_label, us_within_label)
+
+p_original <- ggplot(roc_original, aes(x = specificity, y = sensitivity, color = model)) +
+  geom_line(linewidth = 2.5, alpha = 0.9) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dotted", color = "#666666", alpha = 0.5, linewidth = 1) +
+  scale_color_manual(
+    name = "Validation Strategy",
+    values = colors_panel_a
+  ) +
+  labs(
+    title = "A. ORIGINAL",
+    x = "False Positive Rate",
+    y = "True Positive Rate"
+  ) +
+  theme_dark_scientific(base_size = 14) +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.position = c(0.65, 0.25)
+  ) +
+  coord_equal()
+
+# ==============================================================================
+# PANEL B: REANALYSIS (CROSS-COUNTRY)
+# ==============================================================================
+roc_reanalysis <- rbind(
+  data.frame(
+    specificity = 1 - roc_italy_to_us$specificities,
+    sensitivity = roc_italy_to_us$sensitivities,
+    model = italy_label
+  ),
+  data.frame(
+    specificity = 1 - roc_us_to_italy$specificities,
+    sensitivity = roc_us_to_italy$sensitivities,
+    model = us_label
+  )
+)
+
+# Define colors for Panel B
+colors_panel_b <- c(
+  "#440154",  # Italy→US - Dark purple (viridis 0%)
+  "#31688E"   # US→Italy - Medium blue (viridis 40%)
+)
+names(colors_panel_b) <- c(italy_label, us_label)
+
+p_reanalysis <- ggplot(roc_reanalysis, aes(x = specificity, y = sensitivity, color = model)) +
+  geom_line(linewidth = 2.5, alpha = 0.9) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dotted", color = "#666666", alpha = 0.5, linewidth = 1) +
+  scale_color_manual(
+    name = "Cross-Country",
+    values = colors_panel_b
+  ) +
+  labs(
+    title = "B. REANALYSIS (CROSS-COUNTRY VALIDATION)",
+    x = "False Positive Rate",
+    y = "True Positive Rate"
+  ) +
+  theme_dark_scientific(base_size = 14) +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.position = c(0.65, 0.25)
+  ) +
+  coord_equal()
+
+# ==============================================================================
+# PANEL C: CONFUSION MATRICES FOR CROSS-COUNTRY
+# ==============================================================================
+
+# Italy → US confusion matrix
+cm_italy_us <- lcv_results$italy_to_us$confusion_matrix
+cm_italy_us_df <- as.data.frame.table(cm_italy_us)
+names(cm_italy_us_df) <- c("Predicted", "Actual", "Count")
+
+# Calculate metrics
+sens_italy_us <- cm_italy_us["ALS", "ALS"] / sum(cm_italy_us[, "ALS"])
+spec_italy_us <- cm_italy_us["Control", "Control"] / sum(cm_italy_us[, "Control"])
+
+p_cm_italy_us <- ggplot(cm_italy_us_df, aes(x = Actual, y = Predicted, fill = Count)) +
+  geom_tile(color = "#444444", linewidth = 1) +
+  geom_text(aes(label = Count), size = 6, fontface = "bold", color = "white") +
+  scale_fill_gradient(low = "#2c1e3d", high = "#E6550D") +
+  labs(
+    title = sprintf("Italy→US\nSens: %.2f, Spec: %.2f", sens_italy_us, spec_italy_us),
+    x = "True", y = "Predicted"
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme_centered_titles() +
+  theme_zero_margins() +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.position = "none",
+    panel.grid = element_blank()
+  ) +
+  coord_equal()
+
+# US → Italy confusion matrix
+cm_us_italy <- lcv_results$us_to_italy$confusion_matrix
+cm_us_italy_df <- as.data.frame.table(cm_us_italy)
+names(cm_us_italy_df) <- c("Predicted", "Actual", "Count")
+
+sens_us_italy <- cm_us_italy["ALS", "ALS"] / sum(cm_us_italy[, "ALS"])
+spec_us_italy <- cm_us_italy["Control", "Control"] / sum(cm_us_italy[, "Control"])
+
+p_cm_us_italy <- ggplot(cm_us_italy_df, aes(x = Actual, y = Predicted, fill = Count)) +
+  geom_tile(color = "#444444", linewidth = 1) +
+  geom_text(aes(label = Count), size = 6, fontface = "bold", color = "white") +
+  scale_fill_gradient(low = "#2c1e3d", high = "#756BB1") +
+  labs(
+    title = sprintf("US→Italy\nSens: %.2f, Spec: %.2f", sens_us_italy, spec_us_italy),
+    x = "True", y = "Predicted"
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme_centered_titles() +
+  theme_zero_margins() +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.position = "none",
+    panel.grid = element_blank()
+  ) +
+  coord_equal()
+# ==============================================================================
+# COMBINE ALL PANELS: A and B on top, C (both confusion matrices) below
+# ==============================================================================
+((p_original | p_reanalysis) / (p_cm_italy_us | p_cm_us_italy)) +
+  plot_annotation(
+    title = "Geographic Validation: Original Study vs Reanalysis",
+    subtitle = "Cross-country validation reveals severe geographic overfitting not detected by original within-country/pooled approaches",
+    theme = theme_dark_scientific(base_size = 12) +
+      theme(
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5, color = "#FDE724"),
+        plot.background = element_rect(fill = "#151520", color = NA),
+        plot.margin = unit(c(0,0,0,0), "pt")
+      )
+  ) &
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA)
+  )
 ```
 
 ### Performance Summary
@@ -704,80 +1020,214 @@ knitr::include_graphics("../outputs/figures/01_lcv_roc_curves.png")
 perf_comparison <- tibble(
   Approach = c("Pooled CV (original)", "Italy → US", "US → Italy", "Mean LCV"),
   AUC = c(
-    pooled_vs_lcv_comparison$pooled_auc,
+    pooled_cv_results$cv_auc,
     lcv_results$italy_to_us$test_auc,
     lcv_results$us_to_italy$test_auc,
-    lcv_results$mean_test_auc
+    mean(c(lcv_results$italy_to_us$test_auc, lcv_results$us_to_italy$test_auc))
   ),
-  Accuracy = c(
-    NA,
-    lcv_results$italy_to_us$test_accuracy,
-    lcv_results$us_to_italy$test_accuracy,
-    mean(c(lcv_results$italy_to_us$test_accuracy, lcv_results$us_to_italy$test_accuracy))
+  `95% CI (lower)` = c(
+    pooled_cv_results$cv_auc_ci_lower,
+    lcv_results$italy_to_us$test_auc_ci_lower,
+    lcv_results$us_to_italy$test_auc_ci_lower,
+    NA
+  ),
+  `95% CI (upper)` = c(
+    pooled_cv_results$cv_auc_ci_upper,
+    lcv_results$italy_to_us$test_auc_ci_upper,
+    lcv_results$us_to_italy$test_auc_ci_upper,
+    NA
   )
-)
+) %>%
+  knitr::kable(digits = 3, align = c("l", rep("r", 3)))
 
-kable(perf_comparison, digits = 3, align = c("l", "r", "r"))
+perf_comparison
 ```
 
-The leave-country-out cross-validation results reveal substantial failure of geographic generalization, providing strong evidence that the original study's high reported performance is inflated by confounding. Pooled cross-validation—the approach used in the original study—yields an AUC of `r sprintf("%.3f", pooled_vs_lcv_comparison$pooled_auc)`, superficially suggesting excellent diagnostic performance. However, when we rigorously test geographic generalizability by training models on one country and testing on the other, performance decreases to a mean AUC of `r sprintf("%.3f", pooled_vs_lcv_comparison$lcv_mean_auc)`, representing an `r sprintf("%.1f%%", pooled_vs_lcv_comparison$percent_drop)` drop. This performance gap far exceeds acceptable thresholds for clinical deployment (typically <5% drop), indicating that the model has learned site-specific technical artifacts rather than generalizable disease biology.
+## Within-Country Cross-Validation
 
-The asymmetry between the two test directions is particularly revealing. Training on Italian samples (HEPARIN tubes) and testing on US samples (EDTA tubes) yields a test AUC of `r sprintf("%.3f", lcv_results$italy_to_us$test_auc)`—moderate performance. In contrast, the reverse direction (training on US samples, testing on Italian samples) produces a test AUC of only `r sprintf("%.3f", lcv_results$us_to_italy$test_auc)` with a sensitivity of merely `r sprintf("%.1f%%", 100 * lcv_results$us_to_italy$test_sens)`. This means the model trained on US/EDTA data **fails to detect ALS in 98% of Italian/HEPARIN cases**, misclassifying nearly all true ALS patients as controls. This severe generalization failure indicates that the model has overfitted to EDTA-specific protein signatures that are absent or reversed in HEPARIN samples, limiting its utility when anticoagulant context changes.
+```{r within-country-cv}
+#| echo: false
+#| message: false
 
-This bidirectional failure pattern strongly indicates that the original pooled cross-validation substantially overstates true performance because it mixes geographic/tube contexts within training and test folds, allowing the model to exploit technical artifacts present in both sets. In a realistic clinical deployment scenario where tube types vary by institution or where models trained at one site are deployed elsewhere, performance would decrease to the levels observed in leave-country-out validation (~0.77 AUC)—barely better than chance for some diagnostic groups. The fact that pooled CV and LCV yield such different estimates indicates that confounding substantially affects the published performance metrics.
+italy_within_cv <- within_country_cv_results$italy
+us_within_cv <- within_country_cv_results$us
+```
 
-::: {.callout-warning}
-## Critical Finding
+```{r cv-comparison-plot}
+#| label: fig-cv-comparison
+#| fig-cap: "Model performance comparison: Pooled CV, Within-country CV, and Leave-country-out (LCV)"
+#| fig-width: 16
+#| fig-height: 7
 
-**Performance Gap: `r sprintf("%.3f", pooled_vs_lcv_comparison$auc_gap)` (`r sprintf("%.1f%%", pooled_vs_lcv_comparison$percent_drop)` drop)**
+library(patchwork)
 
-The model exhibits severe geographic overfitting:
-- **Pooled CV** (optimistic, confounded estimate): AUC = `r sprintf("%.3f", pooled_vs_lcv_comparison$pooled_auc)`
-- **Leave-Country-Out CV** (realistic estimate): AUC = `r sprintf("%.3f", pooled_vs_lcv_comparison$lcv_mean_auc)`
-- **Interpretation**: Original published performance (~98% accuracy) is substantially inflated by confounding
-- **Clinical implication**: Model is not currently generalizable across sites with different tube types without substantial redesign
+# Panel 1: Within-country CV results
+within_country_data <- tibble::tibble(
+  Approach = factor(
+    c("Italy-only CV\n(HEPARIN)", "US-only CV\n(EDTA)"),
+    levels = c("Italy-only CV\n(HEPARIN)", "US-only CV\n(EDTA)")
+  ),
+  AUC = c(italy_within_cv$cv_auc, us_within_cv$cv_auc),
+  CI_lower = c(italy_within_cv$cv_auc_ci_lower, us_within_cv$cv_auc_ci_lower),
+  CI_upper = c(italy_within_cv$cv_auc_ci_upper, us_within_cv$cv_auc_ci_upper)
+)
 
-Realistic performance estimate: **AUC ≈ `r sprintf("%.2f", pooled_vs_lcv_comparison$lcv_mean_auc)`** (not clinically adequate)
+p1 <- ggplot(within_country_data, aes(x = Approach, y = AUC, fill = Approach)) +
+  geom_col(width = 0.65, color = "#0B0B0F") +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.15, color = "#C8C8D0", size = 0.5) +
+  geom_point(size = 4, color = "white", shape = 21, fill = "#FDE724", stroke = 1.5) +
+  geom_text(aes(label = sprintf("%.3f", AUC)), vjust = -1.2, color = "white", size = 5.5, fontface = "bold") +
+  scale_y_continuous(limits = c(0.5, 1.0), breaks = seq(0.5, 1.0, 0.05)) +
+  scale_fill_manual(
+    values = c(
+      "Italy-only CV\n(HEPARIN)" = "#5DC863",
+      "US-only CV\n(EDTA)" = "#31688E"
+    )
+  ) +
+  labs(
+    title = "A. Within-Country CV Performance",
+    subtitle = "Models trained and tested within single cohorts",
+    x = NULL,
+    y = "AUC (95% CI)"
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme_zero_margins() +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.position = "none",
+    axis.text.x = element_text(size = 11, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
+
+# Panel 2: Pooled and LCV comparison
+pooled_lcv_data <- tibble::tibble(
+  Approach = factor(
+    c("Pooled CV", "Italy → US", "US → Italy"),
+    levels = c("Pooled CV", "Italy → US", "US → Italy")
+  ),
+  AUC = c(
+    pooled_cv_results$cv_auc,
+    lcv_results$italy_to_us$test_auc,
+    lcv_results$us_to_italy$test_auc
+  ),
+  CI_lower = c(
+    pooled_cv_results$cv_auc_ci_lower,
+    lcv_results$italy_to_us$test_auc_ci_lower,
+    lcv_results$us_to_italy$test_auc_ci_lower
+  ),
+  CI_upper = c(
+    pooled_cv_results$cv_auc_ci_upper,
+    lcv_results$italy_to_us$test_auc_ci_upper,
+    lcv_results$us_to_italy$test_auc_ci_upper
+  ),
+  Type = c("Pooled", "LCV", "LCV")
+)
+
+p2 <- ggplot(pooled_lcv_data, aes(x = Approach, y = AUC, fill = Type)) +
+  geom_col(width = 0.65, color = "#0B0B0F") +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_upper), width = 0.15, color = "#C8C8D0", size = 0.5) +
+  geom_point(size = 4, color = "white", shape = 21, fill = "#FDE724", stroke = 1.5) +
+  geom_text(aes(label = sprintf("%.3f", AUC)), vjust = -1.2, color = "white", size = 5.5, fontface = "bold") +
+  scale_y_continuous(limits = c(0.5, 1.0), breaks = seq(0.5, 1.0, 0.05)) +
+  scale_fill_manual(
+    values = c(
+      "Pooled" = "#FDE725",
+      "LCV" = "#C2408C"
+    )
+  ) +
+  labs(
+    title = "B. Pooled vs Leave-Country-Out CV",
+    subtitle = "Geographic validation reveals confounding",
+    x = NULL,
+    y = "AUC (95% CI)"
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme_zero_margins() +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.position = "none",
+    axis.text.x = element_text(size = 11, face = "bold"),
+    axis.text.y = element_text(size = 11),
+    axis.title.y = element_text(size = 12, face = "bold")
+  )
+
+# Combine panels side by side
+(p1 + p2) + plot_layout() & theme_zero_margins()
+```
+
+**Within-country model performance:**
+
+- **Italy-only (HEPARIN, n = `r italy_within_cv$n`; ALS `r italy_within_cv$n_als`, Controls `r italy_within_cv$n_ctrl`):** AUC `r sprintf("%.3f", italy_within_cv$cv_auc)` (95% CI `r sprintf("%.3f–%.3f", italy_within_cv$cv_auc_ci_lower, italy_within_cv$cv_auc_ci_upper)`)
+- **US-only (EDTA, n = `r us_within_cv$n`; ALS `r us_within_cv$n_als`, Controls `r us_within_cv$n_ctrl`):** AUC `r sprintf("%.3f", us_within_cv$cv_auc)` (95% CI `r sprintf("%.3f–%.3f", us_within_cv$cv_auc_ci_lower, us_within_cv$cv_auc_ci_upper)`)
+
+::: {.callout-note}
+## Interpretation
+
+- **Pooled CV** remains the optimistic upper bound because confounding structure is shared across folds.
+- **Italy-only and US-only CV** reflect performance in homogeneous cohorts without cross-matrix generalization demands. Both achieve reasonable performance within their respective anticoagulant contexts.
+- **The large gap** between within-country CV and leave-country-out (Italy → US and US → Italy) demonstrates that performance degrades substantially when the anticoagulant/geography context changes. This pattern is consistent with models learning tube/context-specific signatures that do not transfer across countries, not generalizable ALS biology.
 :::
-
-### Detailed Results by Direction
-
-**Direction 1: Train Italy (HEPARIN) → Test US (EDTA)**
-
-- Training AUC (5-fold CV on Italy): `r sprintf("%.3f", lcv_results$italy_to_us$train_auc)`
-- **Test AUC on US: `r sprintf("%.3f", lcv_results$italy_to_us$test_auc)`** (moderate generalization)
-- Test Sensitivity: `r sprintf("%.1f%%", 100 * lcv_results$italy_to_us$test_sens)`
-- Test Specificity: `r sprintf("%.1f%%", 100 * lcv_results$italy_to_us$test_spec)`
-
-**Direction 2: Train US (EDTA) → Test Italy (HEPARIN)**
-
-- Training AUC (5-fold CV on US): `r sprintf("%.3f", lcv_results$us_to_italy$train_auc)`
-- **Test AUC on Italy: `r sprintf("%.3f", lcv_results$us_to_italy$test_auc)`** ⚠️ **Severe Generalization Failure**
-- Test Sensitivity: `r sprintf("%.1f%%", 100 * lcv_results$us_to_italy$test_sens)` ⚠️ **Near-complete failure to detect ALS**
-- Test Specificity: `r sprintf("%.1f%%", 100 * lcv_results$us_to_italy$test_spec)`
-
-::: {.callout-caution}
-## Severe Asymmetric Generalization Failure
-
-**Model trained on US/EDTA data fails to detect ALS in Italian/HEPARIN samples**
-
-Only **`r lcv_results$us_to_italy$test_sens * sum(lcv_results$italy_to_us$confusion_matrix[, "ALS"])` out of 223 Italian ALS cases** were correctly identified (1.8% sensitivity). The model learned EDTA-specific protein signatures that do not transfer to HEPARIN context, limiting cross-site deployment.
-:::
-
-### Reappraisal of UK Biobank External Validation
-
-The original study reported a 99.1% AUC on UK Biobank (UKBB) External Validation Set 2, comparing 13 ALS cases against 23,601 healthy controls. However, the authors did not report whether tube type was standardized, whether geographic diversity existed, or whether validation was stratified—the very issues that undermined their primary analysis. Without these methodological details, the UK Biobank results cannot be interpreted as independent validation. We note that UK Biobank protocols typically use EDTA tubes [@elliott2008], which would introduce a systematic batch effect relative to the HEPARIN-predominant training set, potentially explaining any observed performance differences. Additionally, the extreme class imbalance (0.06% prevalence) and exclusion of neurological disease controls (the clinically relevant diagnostic challenge) further limit the generalizability of this validation to real-world clinical deployment scenarios where the model must distinguish ALS from conditions that mimic its symptoms.
 
 ---
 
 ## Differential Analysis: Stratified vs Pooled
 
 ```{r protein-counts}
-#| echo: false
+#| code-fold: true
 #| label: fig-protein-counts
 #| fig-cap: "Significant protein counts by analysis approach"
+#| fig-width: 10
+#| fig-height: 7
 
-knitr::include_graphics("../outputs/figures/04_protein_counts.png")
+# Plot protein counts inline (moved from R/06_visualizations.R for transparency)
+library(ggplot2)
+
+counts_data <- data.frame(
+  analysis = c(
+    "Italy\n(HEPARIN)",
+    "US\n(EDTA)",
+    "Pooled\n(Confounded)",
+    "Both Strata\n(Robust)"
+  ),
+  count = c(
+    length(stratified_vs_pooled_comparison$sig_italy),
+    length(stratified_vs_pooled_comparison$sig_us),
+    length(stratified_vs_pooled_comparison$sig_pooled),
+    length(stratified_vs_pooled_comparison$sig_both_strata)
+  ),
+  type = c("Stratified", "Stratified", "Pooled", "Robust")
+)
+
+counts_data$analysis <- factor(counts_data$analysis, levels = counts_data$analysis)
+
+ggplot(counts_data, aes(x = analysis, y = count, fill = type)) +
+  geom_col(width = 0.7, alpha = 0.9) +
+  geom_text(aes(label = count), vjust = -0.5, size = 5, fontface = "bold", color = "#EEEEEE") +
+  scale_fill_manual(values = c(
+    "Stratified" = "#31688E", # viridis cyan
+    "Pooled" = "#FDE724", # viridis yellow
+    "Robust" = "#6CCE59" # viridis lime
+  )) +
+  labs(
+    title = "Significant Proteins by Analysis Type",
+    subtitle = sprintf(
+      "Only %d/%d pooled proteins (%.1f%%) replicate in both strata - major reproducibility issue",
+      length(stratified_vs_pooled_comparison$overlap_both),
+      length(stratified_vs_pooled_comparison$sig_pooled),
+      stratified_vs_pooled_comparison$pct_replicate_in_both
+    ),
+    x = NULL,
+    y = "Number of Significant Proteins\n(FDR < 0.05, |logFC| > 0.5)",
+    fill = "Type"
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme(
+    legend.position = "none",
+    panel.grid.major.x = element_blank()
+  )
 ```
 
 ### Summary Statistics
@@ -806,7 +1256,7 @@ diff_summary <- tibble(
 kable(diff_summary, digits = 1, align = c("l", "r", "r"))
 ```
 
-::: {.callout-important}
+::: {.callout-important appearance="minimal"}
 ## Critical Finding
 
 **Only `r sprintf("%.1f%%", stratified_vs_pooled_comparison$pct_replicate_in_both)` of pooled proteins replicate in BOTH strata**
@@ -819,11 +1269,50 @@ kable(diff_summary, digits = 1, align = c("l", "r", "r"))
 ### Protein Overlap Visualization
 
 ```{r protein-venn}
-#| echo: false
+#| code-fold: true
 #| label: fig-protein-venn
 #| fig-cap: "Venn diagram showing protein overlap between strata"
+#| fig-width: 10
+#| fig-height: 8
+#| out-width: "100%"
 
-knitr::include_graphics("../outputs/figures/05_protein_venn.png")
+# Plot Venn diagram inline (moved from R/06_visualizations.R for transparency)
+library(ggplot2)
+library(ggvenn)
+
+# Prepare data for ggvenn
+venn_data <- list(
+  Italy = stratified_vs_pooled_comparison$sig_italy,
+  US = stratified_vs_pooled_comparison$sig_us,
+  Pooled = stratified_vs_pooled_comparison$sig_pooled
+)
+
+ggvenn(
+  venn_data,
+  fill_color = c("#1F9E89", "#B5DE2B", "#FDE724"), # viridis jade, yellow-green, yellow
+  fill_alpha = 0.5,
+  stroke_size = 1,
+  set_name_size = 5,
+  set_name_color = "white",
+  text_size = 4
+) +
+  labs(
+    title = "Protein Overlap: Stratified vs Pooled Analysis",
+    subtitle = sprintf(
+      "⚠️ CRITICAL: Only %d proteins (%.1f%%) significant in BOTH Italy and US",
+      length(stratified_vs_pooled_comparison$sig_both_strata),
+      stratified_vs_pooled_comparison$pct_replicate_in_both
+    )
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme(
+    plot.background = element_rect(fill = "#151520", colour = NA),
+    panel.background = element_rect(fill = "#151520", colour = NA),
+    legend.background = element_rect(fill = "#151520", colour = NA),
+    legend.key = element_rect(fill = "#151520", colour = NA),
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle = element_text(color = "#FDE724", face = "bold", hjust = 0.5)
+  )
 ```
 
 ## Tube-Robust Biomarker Candidates
@@ -849,17 +1338,70 @@ protein_concordance %>%
 
 ### Effect Size Correlation
 
+To assess whether effect sizes are consistent across cohorts, we calculate correlations for two protein sets:
 
-**Effect size correlation (Italy vs US): r = `r sprintf("%.3f", cor(protein_concordance$logFC_italy, protein_concordance$logFC_us, use = "complete.obs"))`**
+1. **All proteins on Olink panel** (n = `r nrow(protein_concordance)`)
+2. **Proteins significant in pooled analysis** (n = `r sum(differential_pooled$adj.P.Val < 0.05 & abs(differential_pooled$logFC) > 0.5)`)
 
-This near-zero correlation demonstrates that effect sizes are essentially **uncorrelated** across geographic cohorts—a critical indicator that technical artifacts dominate the signal.
+```{r effect-size-correlations}
+#| echo: false
+#| label: fig-effect-correlations
+#| fig-cap: "Effect size correlations between Italy and US cohorts"
+#| fig-width: 18
+#| fig-height: 10
+#| out-width: "100%"
 
-::: {.callout-note}
-The extremely low correlation (essentially zero) indicates:
+# Calculate correlations for display (both Pearson and Spearman)
+cor_all_pearson <- cor(protein_concordance$logFC_italy, protein_concordance$logFC_us,
+                       use = "complete.obs", method = "pearson")
+cor_all_spearman <- cor(protein_concordance$logFC_italy, protein_concordance$logFC_us,
+                        use = "complete.obs", method = "spearman")
 
-- Effect sizes are largely **inconsistent** between cohorts
-- Geographic/tube effects **dominate** over biological signals
-- Even "concordant" proteins show different magnitudes
+pooled_sig <- differential_pooled %>%
+  filter(adj.P.Val < 0.05, abs(logFC) > 0.5) %>%
+  pull(Assay)
+
+cor_pooled_pearson <- protein_concordance %>%
+  filter(Assay %in% pooled_sig) %>%
+  {cor(.$logFC_italy, .$logFC_us, use = "complete.obs", method = "pearson")}
+
+cor_pooled_spearman <- protein_concordance %>%
+  filter(Assay %in% pooled_sig) %>%
+  {cor(.$logFC_italy, .$logFC_us, use = "complete.obs", method = "spearman")}
+
+# Load and display the figure from targets
+tar_load(viz_correlation_by_set)
+viz_correlation_by_set$plot
+```
+
+**Key Findings:**
+
+- **All proteins**: Pearson r = `r sprintf("%.3f", cor_all_pearson)`, Spearman ρ = `r sprintf("%.3f", cor_all_spearman)` — Near-zero Pearson correlation with **negative Spearman rank correlation** across entire panel
+- **Pooled-significant proteins**: Pearson r = `r sprintf("%.3f", cor_pooled_pearson)`, Spearman ρ = `r sprintf("%.3f", cor_pooled_spearman)` — Moderate-to-strong correlation among selected proteins
+
+The stark difference between these correlations reveals an important pattern: proteins that reach significance in the pooled analysis tend to show **more consistent effect sizes** across cohorts, while the majority of proteins on the panel show essentially **no correlation**.
+
+**Notably**, the negative Spearman correlation (ρ = -0.115) for all proteins indicates that even the **rank ordering** of effects tends to be inverted between cohorts—proteins with larger effects in Italy tend to have smaller effects in the US, and vice versa. This rank inversion, while modest in magnitude, suggests systematic differences in how proteins respond across the two cohorts that go beyond simple scaling differences.
+
+::: {.callout-important appearance="minimal"}
+## Interpretation and ML Implications
+
+**What this means:**
+
+The 78 proteins significant in pooled analysis do show reasonable concordance between Italy and US (Pearson r ≈ 0.79, Spearman ρ ≈ 0.68), suggesting they may capture some reproducible ALS biology. However:
+
+1. **Rank inversion in broader panel**: Across all proteins, Spearman ρ = -0.115 indicates systematic rank-order differences between cohorts
+2. **Effect concordance ≠ absence of confounding**: Proteins can show consistent disease associations while still being systematically affected by tube type
+3. **72% of pooled proteins fail stratified replication**: Only 22/78 (28%) are significant in BOTH cohorts
+4. **Geographic validation issues persist**: ML models trained on pooled data show reduced performance in leave-country-out CV (18% performance drop: from AUC = 0.95 to 0.77)
+5. **Reverse prediction remains problematic**: Proteins discriminate tube types with very high accuracy (AUC = 0.999), indicating pervasive technical effects
+6. **Residual confounding in "robust" proteins**: Even the 22 tube-robust proteins predict tube type with AUC = 0.89
+
+**Critical point for ML models:**
+
+The moderate-to-strong correlation (Pearson r ≈ 0.79) among pooled-significant proteins does **NOT** eliminate concerns about confounding bias in machine learning models. The models are trained on absolute NPX values—which contain both biological signal AND tube-type effects—not on effect sizes. Geographic validation demonstrates that models show substantially reduced generalization (Italy→US: AUC = 0.81; US→Italy: AUC = 0.74; mean = 0.77) compared to pooled cross-validation (AUC = 0.95), indicating that the training data contains systematic cohort-specific patterns.
+
+**Interpretation:** While some proteins show reproducible disease associations, the ML framework faces substantial challenges due to the Italy-HEPARIN/US-EDTA confound structure.
 :::
 
 ### Biological Interpretation
@@ -873,11 +1415,193 @@ The extremely low correlation (essentially zero) indicates:
 
 **Verdict:** While NEFL and a small subset of proteins remain clinically relevant, their magnitudes in the pooled analysis are inflated and their relative rankings among biomarkers are distorted by non-biological factors. Most of the published protein list requires prospective validation in tube-balanced studies.
 
+### Visualizing Country/Tube Effects in Tube-Robust Proteins
+
+To demonstrate that even "tube-robust" proteins exhibit systematic country/tube effects, we examine the distribution of NPX values for ALL tube-robust proteins, comparing ALS vs. Healthy controls across Italy (HEPARIN) and US (EDTA) cohorts.
+
+```{r tube-robust-protein-viz}
+#| label: fig-tube-robust-viz
+#| fig-cap: "All 'Tube-Robust' Proteins Show Strong Country/Tube Effects"
+#| fig-width: 12
+#| fig-height: 40
+#| echo: false
+
+# Load data if not already loaded
+if (!exists("protein_concordance")) {
+  tar_load(protein_concordance)
+}
+if (!exists("data_with_country")) {
+  tar_load(data_with_country)
+}
+if (!exists("original_biomarkers")) {
+  tar_load(original_biomarkers)
+}
+if (!exists("tube_effects_als")) {
+  tar_load(tube_effects_als)
+}
+if (!exists("tube_effects_healthy")) {
+  tar_load(tube_effects_healthy)
+}
+
+# 1. Identify ALL tube-robust proteins (not just top 15).
+#    These are proteins significant in both cohorts with the same direction of effect.
+#    We arrange them by combined_p to order the facets in the final plot.
+tube_robust_top15_assays <- protein_concordance %>%
+  filter(sig_both, same_direction) %>%
+  arrange(combined_p) %>%
+  pull(Assay)
+
+# Combine tube-robust proteins with ALL original biomarkers to show the full picture
+all_proteins_to_plot <- unique(c(tube_robust_top15_assays, original_biomarkers))
+
+# 2. Prepare the data for plotting.
+#    - Filter the main dataset to include tube-robust proteins AND all original biomarkers.
+#    - Exclude 'Neurological_control' to focus on the ALS vs. Healthy comparison.
+#    - Convert 'Assay' to a factor with levels ordered by significance for a clean plot layout.
+#    - Add marker for original study biomarkers.
+plot_data_tube_effects <- data_with_country %>%
+  filter(
+    Assay %in% all_proteins_to_plot,
+    Diagnosis %in% c("ALS", "Healthy_control")
+  ) %>%
+  mutate(
+    is_original = Assay %in% original_biomarkers,
+    Assay_label = if_else(is_original,
+                         paste0(Assay, " <span style='color:#FDE724;'>★</span>"),
+                         as.character(Assay)),
+    Assay = factor(Assay, levels = all_proteins_to_plot),
+    Assay_label = factor(Assay_label, levels = paste0(all_proteins_to_plot,
+                                                       ifelse(all_proteins_to_plot %in% original_biomarkers, " <span style='color:#FDE724;'>★</span>", ""))),
+    # Extract tube type
+    Tube_type = case_when(
+      country == "Italy" ~ "HEPARIN",
+      country == "US" ~ "EDTA",
+      TRUE ~ "Unknown"
+    ),
+    # Rename diagnosis for cleaner labels
+    Diagnosis_clean = case_when(
+      Diagnosis == "Healthy_control" ~ "Healthy",
+      TRUE ~ Diagnosis
+    )
+  )
+
+# 3. Create combined diagnosis-tube factor for color mapping
+plot_data_tube_effects <- plot_data_tube_effects %>%
+  mutate(
+    Diagnosis_Tube = interaction(Diagnosis_clean, Tube_type, sep = " + ")
+  )
+
+# 4. Get limma-based p-values and effect sizes (logFC) for tube comparisons within each diagnosis group
+# (adjusted for age and sex)
+# Combine ALS and Healthy limma results
+limma_tube_effects <- bind_rows(
+  tube_effects_als %>% mutate(Diagnosis_clean = "ALS"),
+  tube_effects_healthy %>% mutate(Diagnosis_clean = "Healthy")
+) %>%
+  select(Assay, Diagnosis_clean, adj.P.Val, logFC)
+
+# Join with plot data and prepare for visualization
+stat_test <- plot_data_tube_effects %>%
+  distinct(Assay, Assay_label, Diagnosis_clean) %>%
+  left_join(limma_tube_effects, by = c("Assay", "Diagnosis_clean")) %>%
+  rename(p = adj.P.Val) %>%
+  mutate(
+    # Format p-values nicely with color coding
+    p_label = case_when(
+      p < 0.001 ~ "p < 0.001",
+      p < 0.01 ~ sprintf("p = %.3f", p),
+      p < 0.05 ~ sprintf("p = %.2f", p),
+      TRUE ~ sprintf("p = %.2f", p)
+    ),
+    # Format effect size from limma (logFC = EDTA - HEPARIN in log2 space)
+    es_label = sprintf("ES = %.2f", logFC),
+    # Combine p-value and effect size
+    combined_label = paste0(p_label, "\n", es_label),
+    # Set fixed y position at NPX = 4
+    y.position = 4,
+    # Set x positions for within-diagnosis comparison
+    xmin = as.numeric(factor(Diagnosis_clean)) - 0.4,
+    xmax = as.numeric(factor(Diagnosis_clean)) + 0.4,
+    # Add group labels for context (though not strictly needed for geom_text)
+    group1 = "HEPARIN",
+    group2 = "EDTA"
+  )
+
+# 5. Generate the faceted plot - grouped by diagnosis with tube types dodged.
+#    - x-axis: Diagnosis (ALS vs Healthy)
+#    - fill: Diagnosis + Tube combination
+#    - ALS: shades of blue (EDTA = light blue, HEPARIN = dark blue)
+#    - Healthy: shades of yellow (EDTA = light yellow, HEPARIN = gold)
+ggplot(plot_data_tube_effects, aes(x = Diagnosis_clean, y = NPX, fill = Diagnosis_Tube)) +
+  geom_violin(
+    position = position_dodge(width = 0.8),
+    scale = "width",
+    alpha = 0.6,
+    linewidth = 0.4
+  ) +
+  geom_boxplot(
+    position = position_dodge(width = 0.8),
+    width = 0.2,
+    outlier.size = 0.3,
+    outlier.alpha = 0.2,
+    alpha = 0.9,
+    linewidth = 0.3
+  ) +
+  # Add p-value and NPX difference labels with color based on significance
+  geom_text(
+    data = stat_test,
+    aes(x = (xmin + xmax) / 2, y = y.position, label = combined_label,
+        color = I(ifelse(p < 0.05, "#B5DE2B", "#EEEEEE"))),
+    size = 7,
+    fontface = "bold",
+    vjust = -0.5,
+    lineheight = 0.9,
+    inherit.aes = FALSE
+  ) +
+  facet_wrap(~ Assay_label, scales = "free_x", ncol = 3) +
+  scale_y_continuous(limits = c(-4, 6), oob = scales::squish) +
+  scale_fill_manual(
+    values = c(
+      "ALS + EDTA" = "#87CEEB",        # Sky blue (lighter) for ALS + EDTA
+      "ALS + HEPARIN" = "#003D5C",     # Navy blue (darker) for ALS + HEPARIN
+      "Healthy + EDTA" = "#FFEB3B",    # Bright yellow for Healthy + EDTA
+      "Healthy + HEPARIN" = "#FF8C00"  # Dark orange for Healthy + HEPARIN
+    ),
+    name = "Group"
+  ) +
+  labs(
+    title = "Tube-Robust Proteins + All Original Biomarkers Show Country/Tube Effects",
+    subtitle = "NPX distribution by diagnosis (ALS vs Healthy), combining tube-robust proteins and ALL 17 original biomarkers. P-values (lime green if p < 0.05, limma-adjusted for age & sex) and effect sizes (ES = logFC from limma, EDTA - HEPARIN) compare tube types within each diagnosis.\n★ = Original study biomarker from Figure 4a",
+    x = "Diagnosis",
+    y = "Protein Expression (NPX)"
+  ) +
+  theme_dark_scientific(base_size = 11) +
+  theme(
+    axis.text.x = element_text(size = 9, face = "bold"),
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    strip.text = ggtext::element_markdown(size = 10)
+  )
+```
+
+::: {.callout-important appearance="minimal"}
+## Key Observation
+
+The visualization combines tube-robust proteins with **ALL 17 original biomarkers from the authors' Figure 4a** to demonstrate that **systematic tube type differences exist across both sets**. Even within healthy controls, we observe substantial EDTA vs. HEPARIN differences (shown as effect sizes and p-values). This pattern demonstrates that:
+
+1. **Country/tube effects are present in disease-free individuals**, proving these differences are technical artifacts, not ALS biology
+2. **ALS vs. Healthy separation varies by country/tube context**, indicating entanglement of biological and technical signals
+3. **Direct NPX comparisons between cohorts are confounded**, even for proteins that show consistent ALS associations within each cohort
+4. **The original biomarkers (★) are not exempt from these confounding effects**, demonstrating that the reported findings cannot be generalized across collection protocols
+
+This visual evidence reinforces the quantitative findings from our three convergent tests (reverse prediction, healthy control analysis, effect decomposition) that residual confounding persists in all candidate biomarkers.
+:::
+
 ## Residual Confounding in "Tube-Robust" Proteins
 
 **Critical Question:** Are the 22 "tube-robust" proteins (significant in both Italy and US with concordant direction) truly independent of tube type effects, or do they still retain substantial technical confounding?
 
-Just because a protein is significant in BOTH cohorts doesn't prove it's free from tube type artifacts. It could be: (1) true biomarker + NO tube effect (ideal), (2) true biomarker + tube effect (entangled), or (3) pure tube artifact spuriously associated with disease. With perfect confounding, we cannot distinguish cases #2 and #3, but we CAN quantify the magnitude of residual tube type signal using three converging approaches.
+Just because a protein is significant in BOTH cohorts doesn't prove it's free from tube type artifacts. It could be: (1) true biomarker + NO tube effect (ideal), (2) true biomarker + tube effect (entangled), or (3) pure tube artifact spuriously associated with disease. With perfect confounding, we cannot distinguish cases #2 and #3, but we CAN quantify the magnitude of residual tube type signal using two complementary approaches below, which together with the reverse prediction test (Section 3.2) provide converging evidence.
 
 ```{r load-residual-confounding}
 #| include: false
@@ -885,98 +1609,242 @@ Just because a protein is significant in BOTH cohorts doesn't prove it's free fr
 # Load new residual confounding analysis results
 tar_load(c(
   robust_proteins_reverse_prediction,
-  healthy_tube_effects,
   effect_decomposition
 ))
+
+# Load limma-based tube effects for healthy controls
+if (!exists("tube_effects_healthy")) {
+  tar_load(tube_effects_healthy)
+}
 ```
 
-### Test 1: Can Tube-Robust Proteins Predict Tube Type?
+### Test 1: Tube Effects in Healthy Controls (Disease-Free Test)
 
-```{r robust-reverse-comparison}
-#| echo: false
-#| label: fig-robust-reverse
-#| fig-cap: "Reverse prediction using only tube-robust proteins"
-
-knitr::include_graphics("../outputs/figures/09_robust_reverse_comparison.png")
-```
-
-**Result: AUC = `r sprintf("%.3f", robust_proteins_reverse_prediction$auc)`** (using only 22 proteins)
-
-We trained a Random Forest classifier to predict tube type using **ONLY** the 22 tube-robust proteins (excluding all other proteins). If these proteins were truly tube-independent, the model should perform near chance (AUC ≈ 0.5). Instead:
-
-**Performance Metrics:**
-- **AUC:** `r sprintf("%.3f", robust_proteins_reverse_prediction$auc)` ⚠️ **SEVERE ENTANGLEMENT**
-- **Sensitivity:** `r sprintf("%.1f%%", 100 * robust_proteins_reverse_prediction$sensitivity)`
-- **Specificity:** `r sprintf("%.1f%%", 100 * robust_proteins_reverse_prediction$specificity)`
-
-::: {.callout-warning}
-## Interpretation
-
-An AUC of `r sprintf("%.3f", robust_proteins_reverse_prediction$auc)` using only 22 proteins indicates **severe residual confounding**. Even our most conservative "tube-robust" candidates strongly predict tube type, demonstrating that:
-
-1. **Biological and technical signals are thoroughly entangled**
-2. Even NEFL—a well-validated ALS biomarker—likely carries tube type signal in this dataset
-3. Perfect confounding prevents separation of true biology from artifacts
-:::
-
-**Top tube-robust proteins still predicting tube type:**
-
-```{r robust-reverse-features}
-#| echo: false
-
-robust_proteins_reverse_prediction$top_features %>%
-  head(5) %>%
-  kable(digits = 2, align = c("l", "r"))
-```
-
-### Test 2: Tube Effects in Healthy Controls (Disease-Free Test)
+As demonstrated in [Figure @fig-tube-robust-viz], even "tube-robust" proteins show systematic differences between tube types within disease-free individuals. Here we quantify these effects statistically.
 
 ```{r healthy-tube-effects-plot}
-#| echo: false
+#| code-fold: true
 #| label: fig-healthy-tube
 #| fig-cap: "Tube type effects in healthy controls only"
+#| fig-width: 10
+#| fig-height: 12
 
-knitr::include_graphics("../outputs/figures/10_healthy_tube_effects.png")
+# Plot healthy tube effects using limma-based results (adjusted for age & sex)
+library(ggplot2)
+library(dplyr)
+
+# Prepare plot data from limma results
+# Filter to only tube-robust proteins (same as old analysis)
+plot_data <- tube_effects_healthy %>%
+  dplyr::filter(Assay %in% tube_robust_top15_assays) %>%
+  dplyr::arrange(adj.P.Val) %>%
+  dplyr::mutate(
+    protein = factor(Assay, levels = rev(Assay)),
+    significant = adj.P.Val < 0.05,
+    # Use logFC as effect size (already in NPX units since NPX is log2)
+    # Calculate approximate 95% CI using t-distribution
+    ci_lower = logFC - 1.96 * logFC / t,
+    ci_upper = logFC + 1.96 * logFC / t
+  )
+
+n_sig <- sum(plot_data$significant)
+n_total <- nrow(plot_data)
+
+ggplot(plot_data, aes(x = logFC, y = protein, color = significant)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "#888888") +
+  geom_point(size = 3) +
+  geom_errorbarh(aes(xmin = ci_lower, xmax = ci_upper), height = 0.3) +
+  scale_color_manual(values = c("TRUE" = "#FDE724", "FALSE" = "#888888")) +
+  labs(
+    title = "Tube Type Effects in Healthy Controls (Disease-Free)",
+    subtitle = sprintf(
+      "⚠️ %d/%d tube-robust proteins differ by tube type WITHOUT disease present\nLimma analysis adjusted for age & sex",
+      n_sig, n_total
+    ),
+    x = "Effect Size in NPX (US/EDTA - Italy/HEPARIN, logFC)",
+    y = NULL,
+    color = "Significant\n(FDR < 0.05)"
+  ) +
+  theme_dark_scientific(base_size = 12) +
+  theme(
+    panel.grid.major.y = element_blank()
+  )
 ```
 
 **Rationale:** If a protein differs between Italy/HEPARIN and US/EDTA in disease-free individuals, that difference MUST be a technical artifact (or population genetics), NOT ALS biology.
 
-**Result: `r sum(healthy_tube_effects$significant)` out of `r nrow(healthy_tube_effects)` proteins (`r sprintf("%.1f%%", 100 * sum(healthy_tube_effects$significant) / nrow(healthy_tube_effects))`) show significant tube effects in healthy controls**
+**Result: `r sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays)` out of `r sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays)` tube-robust proteins (`r sprintf("%.1f%%", 100 * sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays) / sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays))`) show significant tube effects in healthy controls (limma, FDR < 0.05)**
+
+#### Distribution of Tube Effect Sizes Across All Proteins
+
+To understand the full scope of tube type effects in healthy controls, we examine the distribution of effect sizes across **all proteins** in the Olink panel. We present two views: the full distribution and a zoomed view focusing on the central range.
+
+```{r tube-effect-distribution-full}
+#| code-fold: true
+#| label: fig-tube-distribution-full
+#| fig-cap: "Distribution of tube type effect sizes in healthy controls across all proteins (full range)"
+#| fig-width: 12
+#| fig-height: 8
+
+# Load visualization from targets (full range)
+tar_load(viz_tube_effect_distribution_full)
+viz_tube_effect_distribution_full
+```
+
+The full distribution (@fig-tube-distribution-full) shows the complete range of tube effects, including extreme outliers extending beyond 1000% change. This view demonstrates the presence of proteins with massive technical artifacts.
+
+```{r tube-effect-distribution-zoomed}
+#| code-fold: true
+#| label: fig-tube-distribution-zoomed
+#| fig-cap: "Distribution of tube type effect sizes in healthy controls (zoomed to -1000% to +1000% range)"
+#| fig-width: 12
+#| fig-height: 8
+
+# Load visualization from targets (zoomed to -1000 to 1000)
+tar_load(viz_tube_effect_distribution_zoomed)
+viz_tube_effect_distribution_zoomed
+```
+
+The zoomed distribution (@fig-tube-distribution-zoomed) focuses on the -1000% to +1000% range, allowing better visualization of the central distribution pattern. Outliers beyond this range are indicated with arrows.
+
+**Key Findings:**
+
+- **`r sum(tube_effects_healthy$adj.P.Val < 0.05)`** out of **`r nrow(tube_effects_healthy)`** proteins (**`r sprintf("%.1f%%", 100 * sum(tube_effects_healthy$adj.P.Val < 0.05) / nrow(tube_effects_healthy))`**) show significant tube effects in healthy controls (FDR < 0.05)
+- Median absolute percent change: **`r sprintf("%.1f%%", median(abs((2^tube_effects_healthy$logFC - 1) * 100), na.rm = TRUE))`** across all proteins
+- Median absolute percent change (significant only): **`r sprintf("%.1f%%", median(abs((2^tube_effects_healthy$logFC[tube_effects_healthy$adj.P.Val < 0.05] - 1) * 100), na.rm = TRUE))`**
+- **`r sum(abs((2^tube_effects_healthy$logFC - 1) * 100) > 100, na.rm = TRUE)`** proteins show >100% change
+- **`r sum(abs((2^tube_effects_healthy$logFC - 1) * 100) > 50, na.rm = TRUE)`** proteins show >50% change
+- **`r sum(abs((2^tube_effects_healthy$logFC - 1) * 100) > 1000, na.rm = TRUE)`** proteins show extreme changes >1000%
+
+**Interpretation:** This distribution reveals that tube type differences are **widespread and substantial** across the entire proteome, not limited to a few outlier proteins. The fact that over a third of all proteins show significant effects in disease-free individuals demonstrates that technical artifacts dominate the variance structure of this dataset. The presence of extreme outliers (>1000% change) indicates that some proteins are profoundly affected by anticoagulant choice, making them completely unreliable for biomarker discovery without proper experimental control.
 
 ```{r healthy-tube-summary}
 #| echo: false
 #| label: tbl-healthy-tube
-#| tbl-cap: "Top proteins with tube effects in disease-free individuals"
+#| tbl-cap: "Top tube-robust proteins with tube effects in disease-free individuals (limma-adjusted for age & sex)"
 
-healthy_tube_effects %>%
-  filter(significant) %>%
-  arrange(p_value) %>%
+tube_effects_healthy %>%
+  filter(Assay %in% tube_robust_top15_assays, adj.P.Val < 0.05) %>%
+  arrange(adj.P.Val) %>%
   head(5) %>%
-  select(protein, mean_NPX_italy, mean_NPX_us, raw_difference, p_value) %>%
-  kable(digits = 3, align = c("l", rep("r", 4)))
+  select(Assay, logFC, AveExpr, t, adj.P.Val) %>%
+  kable(
+    digits = 3,
+    align = c("l", rep("r", 4)),
+    col.names = c("Protein", "logFC (NPX)", "Mean NPX", "t-statistic", "FDR")
+  )
 ```
 
-::: {.callout-important}
+::: {.callout-important appearance="minimal"}
 ## Critical Finding
 
-**Half of tube-robust proteins differ by tube type even WITHOUT disease present!**
+**Many tube-robust proteins differ by tube type even WITHOUT disease present!**
 
-- NEFL shows 1.24 NPX difference (p < 10⁻¹⁴) in healthy controls
-- ALDH3A1, DTNB, EDA2R, HS6ST2 also highly significant
+Using limma analysis (adjusted for age & sex):
+
+- Multiple proteins show significant tube effects in disease-free individuals (FDR < 0.05)
 - These differences occur in the **absence of ALS**, proving they reflect technical artifacts
-- After FDR correction: `r sum(healthy_tube_effects$significant_fdr)` proteins remain significant
+- P-values are now properly adjusted for covariates using empirical Bayes
+- `r sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays)` of `r sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays)` tube-robust proteins remain significant after FDR correction
 
 This definitively demonstrates that even "tube-robust" candidates are contaminated by technical confounding.
 :::
 
-### Test 3: Effect Size Decomposition (Biology vs Artifacts)
+### Test 2: Effect Size Decomposition (Biology vs Artifacts)
 
 ```{r effect-decomposition-plot}
-#| echo: false
+#| code-fold: true
 #| label: fig-effect-decomp
 #| fig-cap: "Tube type effects vs disease effects for each protein"
+#| fig-width: 14
+#| fig-height: 15.75
 
-knitr::include_graphics("../outputs/figures/11_effect_decomposition.png")
+# Plot effect decomposition inline (moved from R/06_visualizations.R for transparency)
+library(ggplot2)
+library(dplyr)
+library(ggrepel)
+
+# Prepare data
+plot_data <- effect_decomposition %>%
+  dplyr::mutate(
+    category = dplyr::case_when(
+      ratio_tube_to_disease > 1.0 ~ "Tube > Disease",
+      ratio_tube_to_disease > 0.5 ~ "Tube (ES >= 50% Disease)",
+      ratio_tube_to_disease > 0.2 ~ "Tube (ES 20-50% Disease)",
+      TRUE ~ "Tube (ES < 20% Disease)"
+    ),
+    category = factor(category, levels = c(
+      "Tube > Disease",
+      "Tube (ES >= 50% Disease)",
+      "Tube (ES 20-50% Disease)",
+      "Tube (ES < 20% Disease)"
+    ))
+  )
+
+# Count by category
+category_counts <- plot_data %>%
+  dplyr::count(category)
+
+n_severe <- sum(plot_data$ratio_tube_to_disease >= 0.5, na.rm = TRUE)
+pct_severe <- 100 * n_severe / nrow(plot_data)
+
+# Label ALL proteins (only 22 total, so manageable)
+proteins_to_label <- plot_data
+
+ggplot(plot_data, aes(x = abs_disease_effect, y = abs_tube_effect, color = category)) +
+  # Diagonal line (tube = disease)
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "#FDE724", linewidth = 1) +
+  # Reference line (tube = 50% of disease)
+  geom_abline(intercept = 0, slope = 0.5, linetype = "dotted", color = "#6CCE59", linewidth = 0.8) +
+  # Points
+  geom_point(size = 3, alpha = 0.7) +
+  # Label ALL proteins - set max.overlaps to Inf to ensure all labels are shown
+  ggrepel::geom_text_repel(
+    data = proteins_to_label,
+    aes(label = protein),
+    size = 8.5,
+    color = "#EEEEEE",
+    box.padding = 0.35,
+    point.padding = 0.3,
+    max.overlaps = Inf,
+    min.segment.length = 0,
+    force = 2,
+    force_pull = 1
+  ) +
+  scale_color_manual(values = c(
+    "Tube > Disease" = "#FDE724", # viridis yellow
+    "Tube (ES >= 50% Disease)" = "#B5DE2B", # viridis yellow-green
+    "Tube (ES 20-50% Disease)" = "#6CCE59", # viridis lime
+    "Tube (ES < 20% Disease)" = "#1F9E89" # viridis jade
+  )) +
+  annotate("text",
+    x = max(plot_data$abs_disease_effect, na.rm = TRUE) * 0.7,
+    y = max(plot_data$abs_tube_effect, na.rm = TRUE) * 0.9,
+    label = sprintf("y = x\n(Tube = Disease)"),
+    color = "#FDE724", size = 3, fontface = "italic"
+  ) +
+  annotate("text",
+    x = max(plot_data$abs_disease_effect, na.rm = TRUE) * 0.6,
+    y = max(plot_data$abs_disease_effect, na.rm = TRUE) * 0.3,
+    label = sprintf("y = 0.5x\n(Tube = 50%% Disease)"),
+    color = "#6CCE59", size = 3, fontface = "italic"
+  ) +
+  labs(
+    title = "Effect Size Decomposition: Tube Type vs Disease Effects",
+    subtitle = sprintf(
+      "⚠️ SEVERE: %d/%d proteins (%.1f%%) have tube effects >=50%% of disease effects",
+      n_severe, nrow(plot_data), pct_severe
+    ),
+    x = "Absolute Disease Effect (|ALS - Control|)",
+    y = "Absolute Tube Effect (|US - Italy|)",
+    color = "Entanglement Level"
+  ) +
+  theme_dark_scientific(base_size = 16) +
+  theme(
+    legend.position = "bottom",
+    axis.title = element_text(size = 14),
+    plot.subtitle = element_text(size = 12)
+  )
 ```
 
 **Question:** Is the tube type effect comparable to or larger than the disease effect?
@@ -1033,15 +1901,15 @@ effect_decomposition %>%
 
 Three independent tests converge on the same conclusion:
 
-1. **Reverse prediction (AUC = 0.916):** Tube-robust proteins strongly predict tube type
-2. **Healthy controls (50% significant):** Half show tube effects without disease present
-3. **Effect decomposition (median ratio = 0.22):** Tube effects are 20-50% as large as disease effects
+1. **Reverse prediction (AUC = 0.999, Section 3.2):** ALL proteins nearly perfectly predict tube type
+2. **Healthy controls (50% significant):** Half of tube-robust proteins show tube effects without disease present
+3. **Effect decomposition (median ratio = 0.22):** Tube effects are 20-50% as large as disease effects in tube-robust proteins
 
 **Verdict:** Even the most conservative "tube-robust" biomarker candidates remain substantially entangled with technical artifacts. While some biological signal exists (especially for NEFL), perfect confounding prevents definitive separation of true ALS biology from tube type effects. These proteins should be treated as **prioritized candidates for validation** in tube-balanced studies, NOT as validated biomarkers ready for clinical deployment.
 
 ---
 
-# Discussion
+# <i class="bi bi-chat-square-text"></i> Discussion
 
 ## Severity of Confounding and Impact on Claims
 
@@ -1103,7 +1971,7 @@ This reanalysis demonstrates that rigorous methodological investigation can reve
 
 ---
 
-# Recommendations
+# <i class="bi bi-check2-square"></i> Recommendations
 
 ## For Interpreting the Original Study
 
@@ -1144,9 +2012,9 @@ This reanalysis demonstrates that rigorous methodological investigation can reve
 
 ---
 
-# Conclusions
+# <i class="bi bi-flag-fill"></i> Conclusions
 
-::: {.callout-important}
+::: {.callout-important appearance="minimal"}
 ## Summary of Findings
 
 This investigation provides **clear, converging evidence** that the published ALS biomarker study [@chia2025] suffers from severe confounding between plasma collection tube type (HEPARIN vs. EDTA), geographic origin (Italy vs. US), and diagnostic distribution. The perfect confounding structure—where 100% of neurological controls are EDTA tubes and 85% of ALS cases are HEPARIN tubes—renders biological disease signals non-identifiable from technical artifacts under this observational design.
@@ -1200,7 +2068,14 @@ This investigation exemplifies how rigorous methodological scrutiny can reveal c
 
 ---
 
-# Supplementary Materials
+# <i class="bi bi-journal-text"></i> References {.unnumbered}
+
+::: {#refs}
+:::
+
+---
+
+# <i class="bi bi-file-earmark-text-fill"></i> Supplementary Materials
 
 ## Session Information
 
@@ -1225,21 +2100,11 @@ quarto::quarto_render("reports/confounding_investigation.qmd")
 
 ---
 
-# References {.unnumbered}
-
-::: {#refs}
-:::
-
----
-
-::: {.callout-note collapse="true"}
-## Appendix: Technical Deep-Dive — Why Anticoagulant Choice Matters for ML Biomarker Models
-
-**For the Methodologically Curious**
+## Technical Deep-Dive — Why Anticoagulant Choice Matters for ML Biomarker Models
 
 This technical appendix synthesizes biochemical mechanisms, quantitative evidence, and computational implications explaining why tube type (EDTA vs HEPARIN) confounding represents a critical failure mode in ML diagnostics. This analysis draws from comprehensive review of clinical chemistry, proteomics, and machine learning literature (2023-2025).
 
-### A1. Mechanistic Biochemistry: Distinct Anticoagulant Effects on the Proteome
+### A1. Mechanistic Biochemistry: Distinct Anticoagulant Effects on the Proteome {.unlisted}
 
 **EDTA (Ethylenediaminetetraacetic Acid) — Metal Chelation**
 
@@ -1265,7 +2130,7 @@ Heparin operates through antithrombin III potentiation but creates extensive off
 
 **Critical Asymmetry**: EDTA and heparin create **orthogonal perturbation patterns**—EDTA suppresses metal-dependent proteins while preserving others; heparin suppresses charged proteins while preserving metal-dependent enzymes. This produces distinct, learnable biochemical "fingerprints" that ML models exploit.
 
-### A2. Quantitative Effect Sizes: Tube Signal Exceeds Disease Signal
+### A2. Quantitative Effect Sizes: Tube Signal Exceeds Disease Signal {.unlisted}
 
 **Empirical Magnitude Across Analyte Classes**
 
@@ -1288,7 +2153,7 @@ Systematic reviews document tube type effects ranging from 10-300% depending on 
 
 **Concrete Example from This Study**: In healthy controls (disease-free), Italy/HEPARIN vs US/EDTA show 1.24 NPX difference for NEFL (p < 10⁻¹⁴). This tube artifact occurs **without any disease present**, proving technical dominance.
 
-### A3. ML Batch Effect Propagation: "Shortcut Learning" Failure Mode
+### A3. ML Batch Effect Propagation: "Shortcut Learning" Failure Mode {.unlisted}
 
 **The Computational Mechanism**
 
@@ -1313,7 +2178,7 @@ Pooled cross-validation shuffles samples randomly across folds, maintaining tube
 
 **Leave-country-out CV exposes this**: Train on Italy/HEPARIN → test on US/EDTA forces the model to generalize across tube contexts, causing performance collapse because the learned "HEPARIN signature = ALS" fails on EDTA samples.
 
-### A4. Biomarker Class Vulnerability Patterns
+### A4. Biomarker Class Vulnerability Patterns {.unlisted}
 
 **High-Risk Classes (Tube Effects Dominate)**
 
@@ -1348,7 +2213,7 @@ Pooled cross-validation shuffles samples randomly across folds, maintaining tube
 
 **Critical for ALS**: Many neurodegeneration biomarkers (NEFL, complement proteins, inflammatory markers) fall into high-risk categories, amplifying confounding impact.
 
-### A5. ML Propagation Cascade: From Biochemistry to Model Failure
+### A5. ML Propagation Cascade: From Biochemistry to Model Failure {.unlisted}
 
 **Stage 1: Pre-Analytical Perturbation** (Biochemistry layer)
 - EDTA chelates Ca²⁺/Mg²⁺ → alters 20-50% of plasma proteins
@@ -1375,7 +2240,7 @@ Pooled cross-validation shuffles samples randomly across folds, maintaining tube
 
 **This cascade is systematic and predictable** when confounding structure is ignored during study design.
 
-### A6. Clinical and Equity Implications
+### A6. Clinical and Equity Implications {.unlisted}
 
 **Geographic Disparities in Model Performance**
 
@@ -1404,7 +2269,7 @@ When ML models are trained at academic centers using one tube type and deployed 
 - Post-market surveillance may not stratify performance by laboratory protocol
 - Result: **Approved models fail in real-world heterogeneous deployment**
 
-### A7. Why "Tube-Robust" Proteins Still Show Confounding
+### A7. Why "Tube-Robust" Proteins Still Show Confounding {.unlisted}
 
 **Three Converging Tests (This Study)**
 
@@ -1428,7 +2293,7 @@ With 100% of neurological controls in EDTA and 85% of ALS in HEPARIN:
 
 Even NEFL—a well-validated ALS biomarker—shows 1.24 NPX tube effect in healthy controls. This doesn't mean NEFL isn't a real biomarker; it means **the measured effect size in this study is contaminated** by technical artifacts.
 
-### A8. Batch Correction Limitations
+### A8. Batch Correction Limitations {.unlisted}
 
 **Why Standard Corrections Fail Here**
 
@@ -1449,7 +2314,7 @@ Perfect confounding violates all three:
 
 **The only robust solution**: Balanced study design from the start (equal ALS/control in both EDTA and HEPARIN).
 
-### A9. Quantitative ML Performance Projections
+### A9. Quantitative ML Performance Projections {.unlisted}
 
 **Based on Batch Effect Literature**
 
@@ -1475,7 +2340,7 @@ Random Forest and deep learning models create:
 
 Linear models (logistic regression) show **smaller but still substantial** degradation (~10-15% AUC loss), as tube effects propagate proportionally through learned weights.
 
-### A10. Field-Wide Implications and Solutions
+### A10. Field-Wide Implications and Solutions {.unlisted}
 
 **The Reproducibility Crisis Connection**
 
@@ -1503,7 +2368,7 @@ This case study exemplifies broader patterns in ML medical diagnostics where mul
 - **Post-market surveillance** stratified by laboratory protocol
 - **Predetermined change control** for protocol variations
 
-### A11. Summary: Convergence of Evidence
+### A11. Summary: Convergence of Evidence {.unlisted}
 
 **Mechanistic Plausibility** ✓
 - EDTA and heparin have well-characterized, distinct biochemical effects
@@ -1539,4 +2404,337 @@ This case study exemplifies broader patterns in ML medical diagnostics where mul
 **Version:** 2.0
 **Status:** Final
 **Contact:** See project repository for details
+:::
+
+---
+
+## Computational Transparency
+
+This appendix provides complete transparency into the computational pipeline that generated all results in this report. All computations are managed by the `targets` pipeline, ensuring reproducibility and dependency tracking. Every figure, table, and statistic in this analysis is programmatically generated and version-controlled.
+
+### Pipeline Architecture {.unlisted}
+
+```{r pipeline-dependency-graph}
+#| label: fig-pipeline-graph
+#| fig-cap: "Complete dependency graph showing all computational targets"
+#| fig-width: 14
+#| fig-height: 10
+#| code-fold: true
+#| cache: false
+
+library(targets)
+library(visNetwork)
+
+# Determine project root - handle both manual and tar_quarto() rendering
+project_root <- if (file.exists("../_targets.R")) {
+  normalizePath("..")
+} else if (file.exists("_targets.R")) {
+  getwd()
+} else {
+  "/Users/biostochastics/chia_etal_2025_als"  # fallback to absolute path
+}
+
+# Change to project root to find _targets.R
+withr::with_dir(project_root, {
+  # Create network with custom styling
+  net <- tar_visnetwork(
+    targets_only = TRUE,
+    label = c("time", "size"),
+    level_separation = 150
+  )
+
+  # Apply dark theme with bright viridis colors
+  net %>%
+    visOptions(
+      highlightNearest = list(enabled = TRUE, degree = 1),
+      nodesIdSelection = TRUE
+    ) %>%
+    visInteraction(
+      navigationButtons = TRUE,
+      hover = TRUE
+    ) %>%
+    visLayout(randomSeed = 42) %>%
+    visNodes(
+      font = list(color = "white", size = 16, face = "arial", bold = TRUE),
+      borderWidth = 2,
+      shadow = list(enabled = TRUE, color = "#000000", size = 5, x = 2, y = 2)
+    ) %>%
+    visEdges(
+      color = list(color = "#666666", highlight = "#FDE724", hover = "#FDE724"),
+      smooth = list(enabled = TRUE, type = "cubicBezier", roundness = 0.5),
+      arrows = list(to = list(enabled = TRUE, scaleFactor = 0.5))
+    ) %>%
+    visPhysics(
+      stabilization = list(iterations = 200),
+      barnesHut = list(gravitationalConstant = -8000, springConstant = 0.001, springLength = 200)
+    )
+})
+```
+
+The dependency graph above shows the complete computational workflow. Each node represents a target (data object, model, or visualization), and edges show dependencies. Node size reflects execution time, while colors indicate target status.
+
+### Execution Summary {.unlisted}
+
+```{r execution-summary}
+#| cache: false
+#| code-fold: true
+
+library(dplyr)
+library(purrr)
+
+meta <- targets::tar_meta(fields = c("name", "seconds", "bytes", "warnings", "error"), store = "../_targets")
+
+# Convert to numeric (tar_meta returns character sometimes)
+seconds_num <- as.numeric(meta$seconds)
+bytes_num <- as.numeric(meta$bytes)
+
+# Count warnings
+total_warnings <- sum(purrr::map_int(meta$warnings, function(w) {
+  if (is.null(w) || length(w) == 0) 0L else length(w)
+}))
+
+tibble::tibble(
+  Metric = c("Total Targets", "Total Time (hours)", "Total Size (GB)",
+             "Avg Time (min)", "Max Time (min)", "Warnings", "Errors"),
+  Value = c(
+    nrow(meta),
+    round(sum(seconds_num, na.rm = TRUE) / 3600, 2),
+    round(sum(bytes_num, na.rm = TRUE) / 1e9, 2),
+    round(mean(seconds_num, na.rm = TRUE) / 60, 2),
+    round(max(seconds_num, na.rm = TRUE) / 60, 2),
+    total_warnings,
+    sum(!is.na(meta$error))
+  )
+) |>
+  knitr::kable()
+```
+
+### Target Details (Top 20 by Execution Time) {.unlisted}
+
+```{r target-details}
+#| cache: false
+#| code-fold: true
+
+library(dplyr)
+library(purrr)
+
+meta <- targets::tar_meta(fields = c("name", "seconds", "bytes", "warnings", "error", "format"), store = "../_targets")
+
+# Format table inline
+meta |>
+  dplyr::mutate(
+    time_min = as.numeric(seconds) / 60,
+    size_mb = as.numeric(bytes) / 1e6,
+    warnings_count = purrr::map_int(warnings, function(w) {
+      if (is.null(w) || length(w) == 0) 0L else length(w)
+    }),
+    has_error = !is.na(error)
+  ) |>
+  dplyr::select(name, time_min, size_mb, warnings_count, has_error, format) |>
+  dplyr::arrange(dplyr::desc(time_min)) |>
+  head(20) |>
+  knitr::kable(
+    digits = 2,
+    col.names = c("Target", "Time (min)", "Size (MB)", "Warnings", "Has Error", "Format")
+  )
+```
+
+### Key Analysis Domains {.unlisted}
+
+#### Leave-Country-Out Cross-Validation {.unlisted}
+
+```{r lcv-targets}
+#| echo: false
+#| cache: false
+
+library(dplyr)
+library(purrr)
+library(stringr)
+
+meta <- targets::tar_meta(fields = c("name", "seconds", "bytes", "warnings", "error", "format"), store = "../_targets")
+
+# Filter and format
+lcv_table <- meta |>
+  filter(stringr::str_starts(name, "lcv_|pooled_")) |>
+  dplyr::mutate(
+    time_min = as.numeric(seconds) / 60,
+    size_mb = as.numeric(bytes) / 1e6,
+    warnings_count = purrr::map_int(warnings, function(w) {
+      if (is.null(w) || length(w) == 0) 0L else length(w)
+    })
+  ) |>
+  dplyr::select(name, time_min, size_mb, warnings_count, format) |>
+  dplyr::arrange(name)
+
+# Display table
+lcv_table |>
+  knitr::kable(
+    digits = 2,
+    col.names = c("Target", "Time (min)", "Size (MB)", "Warnings", "Format"),
+    align = c("l", "r", "r", "r", "l")
+  )
+```
+
+#### Differential Expression Analysis {.unlisted}
+
+```{r differential-targets}
+#| cache: false
+#| code-fold: true
+
+library(dplyr)
+library(purrr)
+
+meta <- targets::tar_meta(fields = c("name", "seconds", "bytes", "warnings", "error", "format"), store = "../_targets")
+
+# Filter and format
+meta |>
+  filter(stringr::str_starts(name, "differential_|protein_concordance|stratified_vs_pooled")) |>
+  dplyr::mutate(
+    time_min = as.numeric(seconds) / 60,
+    size_mb = as.numeric(bytes) / 1e6,
+    warnings_count = purrr::map_int(warnings, function(w) {
+      if (is.null(w) || length(w) == 0) 0L else length(w)
+    })
+  ) |>
+  dplyr::select(name, time_min, size_mb, warnings_count, format) |>
+  dplyr::arrange(name) |>
+  knitr::kable(
+    digits = 2,
+    col.names = c("Target", "Time (min)", "Size (MB)", "Warnings", "Format")
+  )
+```
+
+#### Machine Learning Evaluation {.unlisted}
+
+```{r ml-targets}
+#| cache: false
+#| code-fold: true
+
+library(dplyr)
+library(purrr)
+
+meta <- targets::tar_meta(fields = c("name", "seconds", "bytes", "warnings", "error", "format"), store = "../_targets")
+
+# Filter and format
+meta |>
+  filter(stringr::str_starts(name, "model_|reverse_|tube_type_|biomarker_")) |>
+  dplyr::mutate(
+    time_min = as.numeric(seconds) / 60,
+    size_mb = as.numeric(bytes) / 1e6,
+    warnings_count = purrr::map_int(warnings, function(w) {
+      if (is.null(w) || length(w) == 0) 0L else length(w)
+    })
+  ) |>
+  dplyr::select(name, time_min, size_mb, warnings_count, format) |>
+  dplyr::arrange(dplyr::desc(time_min)) |>
+  knitr::kable(
+    digits = 2,
+    col.names = c("Target", "Time (min)", "Size (MB)", "Warnings", "Format")
+  )
+```
+
+### Reproducibility Information {.unlisted}
+
+```{r repro-info}
+#| cache: false
+#| code-fold: true
+
+# Get git information inline
+git_commit <- tryCatch(
+  system("git rev-parse HEAD", intern = TRUE),
+  error = function(e) "unknown"
+)
+
+git_status <- tryCatch(
+  system("git status --short", intern = TRUE),
+  error = function(e) character(0)
+)
+
+git_clean <- length(git_status) == 0
+
+cat("**Git commit:**", git_commit, "\n\n")
+cat("**Repository clean:**", git_clean, "\n\n")
+cat("**R version:**", paste(R.version$major, R.version$minor, sep = "."), "\n\n")
+cat("**Platform:**", R.version$platform, "\n\n")
+cat("**Report generated:**", as.character(Sys.time()), "\n\n")
+cat("**Hardware:**", "Apple MacBook Pro M4 Pro, 24GB RAM", "\n\n")
+cat("**Operating System:**", "macOS 26.0.1 (25A362)", "\n\n")
+```
+
+#### Key Package Versions {.unlisted}
+
+```{r package-versions}
+#| cache: false
+#| code-fold: true
+
+library(dplyr)
+sessioninfo::package_info(c("targets", "tarchetypes", "caret", "limma", "pROC", "ggplot2", "dplyr", "tidyr")) |>
+  as.data.frame() |>
+  select(package, loadedversion, date, source) |>
+  knitr::kable()
+```
+
+#### Complete Session Information {.unlisted}
+
+```{r appendix-session-info}
+#| cache: false
+#| code-fold: true
+#| echo: false
+
+sessioninfo::session_info()
+```
+
+
+
+# List of Figures {.unnumbered}
+
+- @fig-confounding-structure: Conceptual diagram of confounding structure
+- @fig-pca-tube-diagnosis: PCA visualization showing protein expression variance driven by tube type
+- @fig-reverse-roc: ROC curves for predicting tube type from three protein sets
+- @fig-lcv-roc: Leave-Country-Out cross-validation ROC curves
+- @fig-cv-comparison: Performance comparison: Pooled vs Country-stratified vs Within-country cross-validation
+- @fig-protein-counts: Distribution of significant proteins by cohort
+- @fig-protein-venn: Venn diagram showing overlap of significant proteins
+- @fig-effect-correlations: Correlation of effect sizes between Italy and US cohorts
+- @fig-tube-robust-viz: Tube type robustness analysis
+- @fig-healthy-tube: Tube type effects in healthy controls
+- @fig-effect-decomp: Decomposition of observed effects
+- @fig-pipeline-graph: Pipeline dependency graph
+
+# List of Tables {.unnumbered}
+
+- @tbl-confounding: Confounding analysis summary
+- @tbl-reverse-features: Top 10 proteins most predictive of tube type
+- @tbl-lcv-performance: Leave-Country-Out cross-validation performance
+- @tbl-diff-summary: Summary of differential expression analysis
+- @tbl-concordant: Concordant proteins between cohorts
+- @tbl-healthy-tube: Tube type effects in healthy controls
+- @tbl-decomp-summary: Summary of effect decomposition
+
+
+---
+
+::: {.callout-note}
+## Pipeline Reproducibility
+
+This entire analysis pipeline can be reproduced by running:
+
+```r
+# Install dependencies (if needed)
+renv::restore()
+
+# Run complete pipeline
+targets::tar_make()
+
+# Render report
+quarto::quarto_render("reports/confounding_investigation.qmd")
+```
+
+All pipeline targets are cached using the `targets` package. Only changed dependencies trigger recomputation, ensuring efficient incremental updates.
+:::
+
+---
+
+::: {style="text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 2px solid #31688E; color: #888; font-size: 0.9rem;"}
+**Biostochastics, LLC** | [<i class="bi bi-github"></i> GitHub](https://github.com/biostochastics/chia_etal_2025_als) | © 2025
 :::

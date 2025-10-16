@@ -47,9 +47,12 @@
 /* ----------------------------------------------------------------
    SECTION HEADERS - Viridis gradient flow
    ---------------------------------------------------------------- */
-.section h1 {
-  background: linear-gradient(135deg, var(--viridis-purple) 0%, var(--viridis-blue) 40%, var(--viridis-cyan) 100%);
-  color: var(--text-bright);
+h1,
+.section h1,
+#quarto-content h1,
+section h1 {
+  background: linear-gradient(135deg, var(--viridis-green) 0%, var(--viridis-teal) 40%, var(--viridis-cyan) 80%, var(--viridis-blue) 100%) !important;
+  color: var(--text-bright) !important;
   padding: 1.75rem 2rem;
   border-radius: 12px;
   margin-top: 2.5rem;
@@ -64,6 +67,7 @@
   position: relative;
 }
 
+h1::after,
 .section h1::after {
   content: '';
   position: absolute;
@@ -78,8 +82,11 @@
   opacity: 0.5;
 }
 
-.section h2 {
-  color: var(--viridis-lime);
+h2,
+.section h2,
+#quarto-content h2,
+section h2 {
+  color: var(--viridis-lime) !important;
   border-bottom: 3px solid var(--viridis-teal);
   padding-bottom: 0.75rem;
   margin-top: 2.5rem;
@@ -89,6 +96,7 @@
   position: relative;
 }
 
+h2::before,
 .section h2::before {
   content: '';
   position: absolute;
@@ -101,8 +109,11 @@
   border-radius: 2px;
 }
 
-.section h3 {
-  color: var(--viridis-cyan);
+h3,
+.section h3,
+#quarto-content h3,
+section h3 {
+  color: var(--viridis-lime) !important;
   margin-top: 1.75rem;
   margin-bottom: 1rem;
   font-weight: 600;
@@ -120,7 +131,7 @@
     inset 0 1px 0 rgba(108, 206, 89, 0.04);
   margin: 2rem 0;
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: var(--bg-surface);
+  background-color: #0B0B0F !important;
   border: 1px solid rgba(108, 206, 89, 0.15);
   backdrop-filter: blur(10px);
 }
@@ -137,17 +148,12 @@
 .callout-important,
 .callout.callout-important,
 div.callout-important {
-  border-left: 5px solid var(--viridis-cyan) !important;
-  border-color: var(--viridis-cyan) !important;
-  background: linear-gradient(
-    120deg,
-    rgba(49, 104, 142, 0.15) 0%,
-    var(--bg-surface) 50%,
-    var(--bg-surface) 100%
-  ) !important;
-  background-color: var(--bg-surface) !important;
+  border-left: 5px solid var(--viridis-lime) !important;
+  border-color: var(--viridis-lime) !important;
+  background: var(--bg-base) !important;
+  background-color: var(--bg-base) !important;
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.7),
     inset 0 1px 0 rgba(108, 206, 89, 0.03) !important;
 }
 
@@ -155,7 +161,7 @@ div.callout-important {
 .callout-important > .callout-header,
 .callout-important .callout-title {
   background-color: transparent !important;
-  color: #5DC9E2 !important;
+  color: var(--viridis-lime) !important;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -167,24 +173,19 @@ div.callout-important {
 
 .callout-important .callout-icon::before,
 .callout-important > .callout-header .callout-icon::before {
-  background-color: #5DC9E2 !important;
+  background-color: var(--viridis-lime) !important;
 }
 
 /* Warnings - Cyan-teal viridis tones (NO ORANGE/RED) */
 .callout-warning,
 .callout.callout-warning,
 div.callout-warning {
-  border-left: 5px solid var(--viridis-cyan) !important;
-  border-color: var(--viridis-cyan) !important;
-  background: linear-gradient(
-    120deg,
-    rgba(49, 104, 142, 0.15) 0%,
-    var(--bg-surface) 50%,
-    var(--bg-surface) 100%
-  ) !important;
-  background-color: var(--bg-surface) !important;
+  border-left: 5px solid var(--viridis-lime) !important;
+  border-color: var(--viridis-lime) !important;
+  background: var(--bg-base) !important;
+  background-color: var(--bg-base) !important;
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.7),
     inset 0 1px 0 rgba(108, 206, 89, 0.03) !important;
 }
 
@@ -192,7 +193,7 @@ div.callout-warning {
 .callout-warning > .callout-header,
 .callout-warning .callout-title {
   background-color: transparent !important;
-  color: #5DC9E2 !important;
+  color: var(--viridis-lime) !important;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -204,24 +205,19 @@ div.callout-warning {
 
 .callout-warning .callout-icon::before,
 .callout-warning > .callout-header .callout-icon::before {
-  background-color: #5DC9E2 !important;
+  background-color: var(--viridis-lime) !important;
 }
 
 /* Cautions - Yellow viridis end for critical alerts (NO RED) */
 .callout-caution,
 .callout.callout-caution,
 div.callout-caution {
-  border-left: 5px solid #FDE724 !important;
-  border-color: #FDE724 !important;
-  background: linear-gradient(
-    120deg,
-    rgba(253, 231, 36, 0.08) 0%,
-    var(--bg-surface) 50%,
-    var(--bg-surface) 100%
-  ) !important;
-  background-color: var(--bg-surface) !important;
+  border-left: 5px solid var(--viridis-lime) !important;
+  border-color: var(--viridis-lime) !important;
+  background: var(--bg-base) !important;
+  background-color: var(--bg-base) !important;
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.7),
     inset 0 1px 0 rgba(108, 206, 89, 0.03) !important;
 }
 
@@ -229,7 +225,7 @@ div.callout-caution {
 .callout-caution > .callout-header,
 .callout-caution .callout-title {
   background-color: transparent !important;
-  color: #FDE724 !important;
+  color: var(--viridis-lime) !important;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -241,57 +237,67 @@ div.callout-caution {
 
 .callout-caution .callout-icon::before,
 .callout-caution > .callout-header .callout-icon::before {
-  background-color: #FDE724 !important;
+  background-color: var(--viridis-lime) !important;
 }
 
 /* Notes - Green viridis mid-tones */
 .callout-note {
-  border-left: 5px solid var(--viridis-green) !important;
-  background: linear-gradient(
-    120deg,
-    rgba(31, 158, 137, 0.12) 0%,
-    var(--bg-surface) 50%,
-    var(--bg-surface) 100%
-  ) !important;
+  border-left: 5px solid var(--viridis-lime) !important;
+  border-color: var(--viridis-lime) !important;
+  background: var(--bg-base) !important;
+  background-color: var(--bg-base) !important;
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.7),
     inset 0 1px 0 rgba(108, 206, 89, 0.03);
 }
 
-.callout-note .callout-header {
-  background-color: transparent;
-  color: #45E0C5;
+.callout-note .callout-header,
+.callout-note > .callout-header,
+.callout-note .callout-title {
+  background-color: transparent !important;
+  color: var(--viridis-lime) !important;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.callout-note .callout-body {
-  color: var(--text-secondary);
+.callout-note .callout-body,
+.callout-note > .callout-body {
+  color: var(--text-secondary) !important;
+}
+
+.callout-note .callout-icon::before,
+.callout-note > .callout-header .callout-icon::before {
+  background-color: var(--viridis-lime) !important;
 }
 
 /* Tips - Lime viridis for positive guidance */
 .callout-tip {
   border-left: 5px solid var(--viridis-lime) !important;
-  background: linear-gradient(
-    120deg,
-    rgba(108, 206, 89, 0.12) 0%,
-    var(--bg-surface) 50%,
-    var(--bg-surface) 100%
-  ) !important;
+  border-color: var(--viridis-lime) !important;
+  background: var(--bg-base) !important;
+  background-color: var(--bg-base) !important;
   box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.7),
     inset 0 1px 0 rgba(108, 206, 89, 0.03);
 }
 
-.callout-tip .callout-header {
-  background-color: transparent;
-  color: var(--viridis-lime);
+.callout-tip .callout-header,
+.callout-tip > .callout-header,
+.callout-tip .callout-title {
+  background-color: transparent !important;
+  color: var(--viridis-lime) !important;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.callout-tip .callout-body {
-  color: var(--text-secondary);
+.callout-tip .callout-body,
+.callout-tip > .callout-body {
+  color: var(--text-secondary) !important;
+}
+
+.callout-tip .callout-icon::before,
+.callout-tip > .callout-header .callout-icon::before {
+  background-color: var(--viridis-lime) !important;
 }
 
 /* ----------------------------------------------------------------
@@ -411,12 +417,15 @@ div.callout-caution {
 /* ----------------------------------------------------------------
    FIGURE AND IMAGE STYLING - Deep viridis frame
    ---------------------------------------------------------------- */
-figure {
-  margin: 2rem 0;
-  padding: 1.5rem;
-  background: linear-gradient(135deg,
-    var(--bg-surface) 0%,
-    rgba(31, 158, 137, 0.05) 100%);
+/* Only style the outermost container to avoid triple nesting */
+.quarto-figure,
+.quarto-figure-center,
+.quarto-figure-left,
+.quarto-figure-right,
+div.quarto-figure {
+  margin: 2rem 0 !important;
+  padding: 1.5rem !important;
+  background: #151520 !important;
   border-radius: 12px;
   box-shadow:
     0 6px 20px rgba(0, 0, 0, 0.5),
@@ -425,7 +434,8 @@ figure {
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-figure:hover {
+.quarto-figure:hover,
+div.quarto-figure:hover {
   box-shadow:
     0 8px 28px rgba(0, 0, 0, 0.6),
     inset 0 1px 0 rgba(108, 206, 89, 0.04);
@@ -433,12 +443,43 @@ figure:hover {
   transform: translateY(-3px);
 }
 
-figure img {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+/* Remove styling from ALL inner figure and cell-output elements */
+.quarto-figure figure,
+.quarto-figure .cell-output-display,
+.quarto-figure .cell-output,
+.quarto-figure-center figure,
+.quarto-figure-center .cell-output-display,
+.quarto-figure-center .cell-output,
+.cell-output-display figure,
+figure figure,
+div.quarto-figure figure,
+div.quarto-figure .cell-output-display,
+div.quarto-figure .cell-output,
+.quarto-figure > figure,
+.quarto-figure > .cell-output-display,
+.quarto-figure > div {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
-figcaption {
+figure img,
+.cell-output-display img,
+.cell-output figure img {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  background-color: transparent !important;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+figcaption,
+.figure-caption {
   margin-top: 1rem;
   font-size: 0.925rem;
   color: var(--text-muted);
@@ -446,6 +487,7 @@ figcaption {
   padding-top: 0.75rem;
   border-top: 1px solid rgba(108, 206, 89, 0.15);
   text-align: center;
+  background-color: transparent !important;
 }
 
 /* ----------------------------------------------------------------
@@ -677,12 +719,12 @@ blockquote p {
    ---------------------------------------------------------------- */
 .unnumbered h1:first-of-type {
   background: linear-gradient(135deg,
-    var(--viridis-purple) 0%,
-    var(--viridis-blue) 20%,
-    var(--viridis-cyan) 40%,
-    var(--viridis-teal) 60%,
-    var(--viridis-green) 80%,
-    var(--viridis-lime) 100%);
+    var(--viridis-lime) 0%,
+    var(--viridis-green) 20%,
+    var(--viridis-teal) 40%,
+    var(--viridis-cyan) 60%,
+    var(--viridis-blue) 80%,
+    var(--viridis-purple) 100%);
   color: var(--text-bright);
   border-left-color: var(--viridis-yellow);
   box-shadow:
@@ -1136,4 +1178,789 @@ tr.table-error {
 [style*="#fd"],
 [style*="rgb(255"] {
   color: #B794F6 !important;
+}
+
+/* ----------------------------------------------------------------
+   APPENDIX AND COMPUTATIONAL TRANSPARENCY SECTIONS
+   Fully themed to match main content with viridis palette
+   ---------------------------------------------------------------- */
+#appendix,
+#computational-transparency,
+.appendix,
+section.appendix,
+section[id*="appendix"],
+section[id*="computational"],
+section[id*="technical-deep-dive"],
+#quarto-appendix,
+.quarto-appendix-contents {
+  background: linear-gradient(135deg,
+    rgba(68, 1, 84, 0.03) 0%,
+    var(--bg-base) 20%,
+    var(--bg-base) 80%,
+    rgba(31, 158, 137, 0.03) 100%) !important;
+  padding: 2.5rem;
+  border-radius: 12px;
+  margin: 2rem 0;
+  border: 1px solid rgba(108, 206, 89, 0.1);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(108, 206, 89, 0.02);
+}
+
+/* Appendix section headers - distinct purple/cyan gradient styling */
+#appendix h1,
+#computational-transparency h1,
+.appendix h1,
+section.appendix h1,
+section[id*="appendix"] h1,
+section[id*="computational"] h1,
+section[id*="technical-deep-dive"] h1 {
+  background: linear-gradient(135deg,
+    var(--viridis-purple) 0%,
+    var(--viridis-cyan) 40%,
+    var(--viridis-teal) 100%) !important;
+  color: var(--text-bright) !important;
+  padding: 1.75rem 2rem;
+  border-radius: 12px;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(108, 206, 89, 0.03);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border-left: 5px solid var(--viridis-cyan);
+  border-bottom: 2px solid rgba(49, 104, 142, 0.3);
+  position: relative;
+}
+
+#appendix h1::after,
+#computational-transparency h1::after,
+.appendix h1::after,
+section.appendix h1::after,
+section[id*="appendix"] h1::after,
+section[id*="computational"] h1::after,
+section[id*="technical-deep-dive"] h1::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--viridis-cyan) 0%,
+    var(--viridis-purple) 50%,
+    transparent 100%);
+  opacity: 0.5;
+}
+
+#appendix h2,
+#computational-transparency h2,
+.appendix h2,
+section.appendix h2,
+section[id*="appendix"] h2,
+section[id*="computational"] h2,
+section[id*="technical-deep-dive"] h2 {
+  color: var(--viridis-cyan) !important;
+  border-bottom: 3px solid var(--viridis-purple);
+  padding-bottom: 0.75rem;
+  margin-top: 2rem;
+  margin-bottom: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  position: relative;
+}
+
+#appendix h2::before,
+#computational-transparency h2::before,
+.appendix h2::before,
+section.appendix h2::before,
+section[id*="appendix"] h2::before,
+section[id*="computational"] h2::before,
+section[id*="technical-deep-dive"] h2::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: linear-gradient(180deg, var(--viridis-cyan), var(--viridis-purple));
+  border-radius: 2px;
+}
+
+#appendix h3,
+#computational-transparency h3,
+.appendix h3,
+section.appendix h3,
+section[id*="appendix"] h3,
+section[id*="computational"] h3,
+section[id*="technical-deep-dive"] h3 {
+  color: var(--viridis-cyan) !important;
+  margin-top: 1.75rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Technical subsections (A1, A2, etc.) in appendix */
+section[id*="technical-deep-dive"] h3::before,
+section[id*="appendix"] h3::before {
+  content: "▸ ";
+  color: var(--viridis-lime);
+  font-weight: 900;
+  margin-right: 0.5rem;
+}
+
+/* Code blocks in appendix */
+#appendix pre,
+#computational-transparency pre,
+.appendix pre,
+section.appendix pre,
+section[id*="appendix"] pre,
+section[id*="computational"] pre,
+section[id*="technical-deep-dive"] pre {
+  background: linear-gradient(135deg, var(--viridis-dark) 0%, #0D0D15 100%) !important;
+  border-left: 5px solid var(--viridis-cyan);
+  border-radius: 10px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(49, 104, 142, 0.03);
+  padding: 1.25rem !important;
+  overflow-x: auto;
+}
+
+/* Code and inline formatting in appendix sections */
+#appendix code,
+#computational-transparency code,
+.appendix code,
+section.appendix code,
+section[id*="appendix"] code,
+section[id*="computational"] code,
+section[id*="technical-deep-dive"] code {
+  background: linear-gradient(120deg,
+    rgba(68, 1, 84, 0.25) 0%,
+    rgba(49, 104, 142, 0.2) 100%) !important;
+  color: #7DD3E8 !important;
+  border: 1px solid rgba(93, 201, 226, 0.25);
+  padding: 0.25rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.9em;
+}
+
+#appendix pre code,
+#computational-transparency pre code,
+.appendix pre code,
+section.appendix pre code,
+section[id*="appendix"] pre code,
+section[id*="computational"] pre code,
+section[id*="technical-deep-dive"] pre code {
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  border: none;
+}
+
+#appendix .cell-output,
+#computational-transparency .cell-output,
+.appendix .cell-output,
+section.appendix .cell-output,
+section[id*="appendix"] .cell-output,
+section[id*="computational"] .cell-output,
+section[id*="technical-deep-dive"] .cell-output {
+  background-color: var(--bg-surface) !important;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid rgba(49, 104, 142, 0.15);
+}
+
+/* Tables inside appendix sections - full theme matching */
+#appendix table,
+#computational-transparency table,
+.appendix table,
+section.appendix table,
+section[id*="appendix"] table,
+section[id*="computational"] table,
+section[id*="technical-deep-dive"] table,
+#appendix .table,
+#computational-transparency .table,
+.appendix .table,
+section.appendix .table,
+section[id*="appendix"] .table,
+section[id*="computational"] .table,
+section[id*="technical-deep-dive"] .table {
+  background-color: var(--bg-surface) !important;
+  border: 1px solid rgba(49, 104, 142, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+  margin: 2rem 0;
+}
+
+#appendix table thead,
+#computational-transparency table thead,
+.appendix table thead,
+section.appendix table thead,
+section[id*="appendix"] table thead,
+section[id*="computational"] table thead,
+section[id*="technical-deep-dive"] table thead {
+  background: linear-gradient(135deg, var(--viridis-purple) 0%, var(--viridis-cyan) 100%) !important;
+}
+
+#appendix table thead th,
+#computational-transparency table thead th,
+.appendix table thead th,
+section.appendix table thead th,
+section[id*="appendix"] table thead th,
+section[id*="computational"] table thead th,
+section[id*="technical-deep-dive"] table thead th {
+  color: var(--text-bright) !important;
+  border-bottom: 3px solid var(--viridis-cyan) !important;
+  font-weight: 700;
+  text-align: left;
+  padding: 1rem 1.25rem;
+  letter-spacing: -0.01em;
+}
+
+#appendix table tbody tr,
+#computational-transparency table tbody tr,
+.appendix table tbody tr,
+section.appendix table tbody tr,
+section[id*="appendix"] table tbody tr,
+section[id*="computational"] table tbody tr,
+section[id*="technical-deep-dive"] table tbody tr {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid rgba(49, 104, 142, 0.08);
+}
+
+#appendix table tbody tr:nth-child(even),
+#computational-transparency table tbody tr:nth-child(even),
+.appendix table tbody tr:nth-child(even),
+section.appendix table tbody tr:nth-child(even),
+section[id*="appendix"] table tbody tr:nth-child(even),
+section[id*="computational"] table tbody tr:nth-child(even),
+section[id*="technical-deep-dive"] table tbody tr:nth-child(even) {
+  background-color: rgba(49, 104, 142, 0.03);
+}
+
+#appendix table tbody tr:hover,
+#computational-transparency table tbody tr:hover,
+.appendix table tbody tr:hover,
+section.appendix table tbody tr:hover,
+section[id*="appendix"] table tbody tr:hover,
+section[id*="computational"] table tbody tr:hover,
+section[id*="technical-deep-dive"] table tbody tr:hover {
+  background-color: var(--bg-elevated);
+  box-shadow: inset 0 0 0 1px rgba(49, 104, 142, 0.25);
+  transform: scale(1.002);
+}
+
+#appendix table tbody td,
+#computational-transparency table tbody td,
+.appendix table tbody td,
+section.appendix table tbody td,
+section[id*="appendix"] table tbody td,
+section[id*="computational"] table tbody td,
+section[id*="technical-deep-dive"] table tbody td {
+  padding: 0.875rem 1.25rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Paged tables in appendix */
+#appendix .pagedtable,
+#computational-transparency .pagedtable,
+.appendix .pagedtable,
+section.appendix .pagedtable,
+section[id*="appendix"] .pagedtable,
+section[id*="computational"] .pagedtable,
+section[id*="technical-deep-dive"] .pagedtable {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.7);
+  background-color: var(--bg-surface);
+  border: 1px solid rgba(49, 104, 142, 0.2);
+}
+
+#appendix .pagedtable-footer,
+#computational-transparency .pagedtable-footer,
+.appendix .pagedtable-footer,
+section.appendix .pagedtable-footer,
+section[id*="appendix"] .pagedtable-footer,
+section[id*="computational"] .pagedtable-footer,
+section[id*="technical-deep-dive"] .pagedtable-footer {
+  background-color: var(--bg-elevated);
+  color: var(--text-muted);
+  border-top: 1px solid rgba(49, 104, 142, 0.15);
+}
+
+/* Figures in appendix sections */
+#appendix .quarto-figure,
+#computational-transparency .quarto-figure,
+.appendix .quarto-figure,
+section.appendix .quarto-figure,
+section[id*="appendix"] .quarto-figure,
+section[id*="computational"] .quarto-figure,
+section[id*="technical-deep-dive"] .quarto-figure {
+  margin: 2rem 0 !important;
+  padding: 1.5rem !important;
+  background: #151520 !important;
+  border-radius: 12px;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(49, 104, 142, 0.03);
+  border: 1px solid rgba(49, 104, 142, 0.25);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#appendix .quarto-figure:hover,
+#computational-transparency .quarto-figure:hover,
+.appendix .quarto-figure:hover,
+section.appendix .quarto-figure:hover,
+section[id*="appendix"] .quarto-figure:hover,
+section[id*="computational"] .quarto-figure:hover,
+section[id*="technical-deep-dive"] .quarto-figure:hover {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(49, 104, 142, 0.04);
+  border-color: rgba(49, 104, 142, 0.4);
+  transform: translateY(-3px);
+}
+
+/* Appendix callouts - match main theme with subtle purple tones */
+#appendix .callout,
+#computational-transparency .callout,
+.appendix .callout,
+section.appendix .callout,
+section[id*="appendix"] .callout,
+section[id*="computational"] .callout,
+section[id*="technical-deep-dive"] .callout {
+  background-color: #0B0B0F !important;
+  border: 1px solid rgba(49, 104, 142, 0.2);
+  border-left: 5px solid var(--viridis-cyan) !important;
+  border-radius: 12px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(49, 104, 142, 0.04);
+  margin: 2rem 0;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#appendix .callout:hover,
+#computational-transparency .callout:hover,
+.appendix .callout:hover,
+section.appendix .callout:hover,
+section[id*="appendix"] .callout:hover,
+section[id*="computational"] .callout:hover,
+section[id*="technical-deep-dive"] .callout:hover {
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(49, 104, 142, 0.06);
+  transform: translateY(-3px);
+  border-color: rgba(49, 104, 142, 0.35);
+}
+
+/* Lists in appendix */
+#appendix ul,
+#appendix ol,
+#computational-transparency ul,
+#computational-transparency ol,
+.appendix ul,
+.appendix ol,
+section.appendix ul,
+section.appendix ol,
+section[id*="appendix"] ul,
+section[id*="appendix"] ol,
+section[id*="computational"] ul,
+section[id*="computational"] ol,
+section[id*="technical-deep-dive"] ul,
+section[id*="technical-deep-dive"] ol {
+  margin-bottom: 1.25rem;
+  padding-left: 2rem;
+}
+
+#appendix li,
+#computational-transparency li,
+.appendix li,
+section.appendix li,
+section[id*="appendix"] li,
+section[id*="computational"] li,
+section[id*="technical-deep-dive"] li {
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+}
+
+#appendix li::marker,
+#computational-transparency li::marker,
+.appendix li::marker,
+section.appendix li::marker,
+section[id*="appendix"] li::marker,
+section[id*="computational"] li::marker,
+section[id*="technical-deep-dive"] li::marker {
+  color: var(--viridis-cyan);
+  font-weight: 700;
+}
+
+/* Strong emphasis in appendix */
+#appendix strong,
+#appendix b,
+#computational-transparency strong,
+#computational-transparency b,
+.appendix strong,
+.appendix b,
+section.appendix strong,
+section.appendix b,
+section[id*="appendix"] strong,
+section[id*="appendix"] b,
+section[id*="computational"] strong,
+section[id*="computational"] b,
+section[id*="technical-deep-dive"] strong,
+section[id*="technical-deep-dive"] b {
+  color: var(--viridis-cyan) !important;
+  font-weight: 700;
+}
+
+/* Emphasis in appendix */
+#appendix em,
+#computational-transparency em,
+.appendix em,
+section.appendix em,
+section[id*="appendix"] em,
+section[id*="computational"] em,
+section[id*="technical-deep-dive"] em {
+  color: var(--viridis-lime);
+  font-style: italic;
+}
+
+/* Links in appendix */
+#appendix a,
+#computational-transparency a,
+.appendix a,
+section.appendix a,
+section[id*="appendix"] a,
+section[id*="computational"] a,
+section[id*="technical-deep-dive"] a {
+  color: var(--viridis-cyan);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+#appendix a:hover,
+#computational-transparency a:hover,
+.appendix a:hover,
+section.appendix a:hover,
+section[id*="appendix"] a:hover,
+section[id*="computational"] a:hover,
+section[id*="technical-deep-dive"] a:hover {
+  border-bottom-color: var(--viridis-lime);
+  color: var(--viridis-lime);
+}
+
+/* Horizontal rules in appendix */
+#appendix hr,
+#computational-transparency hr,
+.appendix hr,
+section.appendix hr,
+section[id*="appendix"] hr,
+section[id*="computational"] hr,
+section[id*="technical-deep-dive"] hr {
+  border: none;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--viridis-purple) 10%,
+    var(--viridis-cyan) 30%,
+    var(--viridis-teal) 50%,
+    var(--viridis-lime) 70%,
+    transparent 100%);
+  margin: 2rem 0;
+  border-radius: 2px;
+}
+
+/* Blockquotes in appendix */
+#appendix blockquote,
+#computational-transparency blockquote,
+.appendix blockquote,
+section.appendix blockquote,
+section[id*="appendix"] blockquote,
+section[id*="computational"] blockquote,
+section[id*="technical-deep-dive"] blockquote {
+  border-left: 5px solid var(--viridis-purple);
+  background: linear-gradient(90deg,
+    rgba(72, 38, 119, 0.08) 0%,
+    var(--bg-surface) 50%);
+  padding: 1.25rem 1.75rem;
+  margin: 1.5rem 0;
+  color: var(--text-muted);
+  font-style: italic;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  position: relative;
+}
+
+#appendix blockquote::before,
+#computational-transparency blockquote::before,
+.appendix blockquote::before,
+section.appendix blockquote::before,
+section[id*="appendix"] blockquote::before,
+section[id*="computational"] blockquote::before,
+section[id*="technical-deep-dive"] blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -0.5rem;
+  left: 1rem;
+  font-size: 4rem;
+  color: var(--viridis-purple);
+  opacity: 0.15;
+  font-family: Georgia, serif;
+  line-height: 1;
+}
+
+/* Block-level sections in appendix get subtle separators */
+#appendix > div,
+#computational-transparency > div,
+.appendix > div,
+section.appendix > div,
+section[id*="appendix"] > div,
+section[id*="computational"] > div,
+section[id*="technical-deep-dive"] > div {
+  border-top: 1px solid rgba(49, 104, 142, 0.08);
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+/* First child should not have separator */
+#appendix > div:first-child,
+#computational-transparency > div:first-child,
+.appendix > div:first-child,
+section.appendix > div:first-child,
+section[id*="appendix"] > div:first-child,
+section[id*="computational"] > div:first-child,
+section[id*="technical-deep-dive"] > div:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* Appendix citation styling */
+#quarto-appendix.default {
+  background-color: var(--bg-surface) !important;
+  border-top: 3px solid var(--viridis-teal);
+  padding: 2rem;
+  margin-top: 3rem;
+}
+
+#quarto-appendix.default .quarto-appendix-heading {
+  color: var(--viridis-lime) !important;
+  font-weight: 700;
+}
+
+#quarto-appendix.default .csl-entry {
+  color: var(--text-secondary);
+  background-color: transparent;
+  padding: 0.5rem 0;
+  border-left: 3px solid transparent;
+  padding-left: 1rem;
+  transition: all 0.25s ease;
+}
+
+#quarto-appendix.default .csl-entry:hover {
+  border-left-color: var(--viridis-lime);
+  background-color: rgba(108, 206, 89, 0.05);
+}
+
+/* Additional specificity to eliminate triple containers */
+.cell-output-display,
+div.cell-output-display {
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Only the top-level quarto-figure gets styling */
+body .quarto-figure,
+body .quarto-figure-center,
+body div.quarto-figure {
+  /* Keep the styling */
+}
+
+/* Strip everything from children */
+body .quarto-figure *:not(img):not(figcaption):not(.figure-caption),
+body .quarto-figure-center *:not(img):not(figcaption):not(.figure-caption),
+body div.quarto-figure *:not(img):not(figcaption):not(.figure-caption) {
+  background: transparent !important;
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* ----------------------------------------------------------------
+   REPORT TITLE - Viridis gradient text, no background
+   ---------------------------------------------------------------- */
+#title-block-header .title,
+.title,
+h1.title,
+header .title {
+  background: none !important;
+  background-image: linear-gradient(135deg, 
+    var(--viridis-lime) 0%, 
+    var(--viridis-green) 20%, 
+    var(--viridis-teal) 40%, 
+    var(--viridis-cyan) 60%, 
+    var(--viridis-lime) 80%, 
+    var(--viridis-yellow) 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-fill-color: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+#title-block-header,
+header#title-block-header {
+  background: transparent !important;
+  background-color: transparent !important;
+  padding: 2rem 0;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.subtitle {
+  color: var(--viridis-cyan);
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.author {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.date {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ----------------------------------------------------------------
+   LIST OF FIGURES AND LIST OF TABLES
+   ---------------------------------------------------------------- */
+#lof,
+#lot,
+.list-of-figures,
+.list-of-tables {
+  background: linear-gradient(135deg,
+    rgba(31, 158, 137, 0.03) 0%,
+    var(--bg-base) 20%,
+    var(--bg-base) 80%,
+    rgba(108, 206, 89, 0.03) 100%) !important;
+  padding: 2rem;
+  border-radius: 12px;
+  margin: 2rem 0;
+  border: 1px solid rgba(108, 206, 89, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+#lof h2,
+#lot h2,
+.list-of-figures h2,
+.list-of-tables h2 {
+  color: var(--viridis-lime) !important;
+  border-bottom: 3px solid var(--viridis-teal);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+#lof ul,
+#lot ul,
+.list-of-figures ul,
+.list-of-tables ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+#lof li,
+#lot li,
+.list-of-figures li,
+.list-of-tables li {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(108, 206, 89, 0.08);
+  transition: all 0.25s ease;
+}
+
+#lof li:hover,
+#lot li:hover,
+.list-of-figures li:hover,
+.list-of-tables li:hover {
+  background-color: rgba(108, 206, 89, 0.05);
+  padding-left: 1rem;
+  border-left: 3px solid var(--viridis-lime);
+}
+
+#lof li a,
+#lot li a,
+.list-of-figures li a,
+.list-of-tables li a {
+  color: var(--viridis-cyan);
+  text-decoration: none;
+}
+
+#lof li a:hover,
+#lot li a:hover,
+.list-of-figures li a:hover,
+.list-of-tables li a:hover {
+  color: var(--viridis-lime);
+}
+
+/* ----------------------------------------------------------------
+   TECHNICAL DEEP-DIVE SECTION - Purple gradient text
+   ---------------------------------------------------------------- */
+#technical-deep-dive {
+  background: none !important;
+  background-image: linear-gradient(135deg,
+    var(--viridis-dark) 0%,
+    var(--viridis-purple) 25%,
+    var(--viridis-blue) 50%,
+    var(--viridis-cyan) 75%,
+    var(--viridis-blue) 100%) !important;
+  background-clip: text !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  text-fill-color: transparent !important;
+  padding: 1.75rem 2rem !important;
+  margin-top: 2.5rem !important;
+  margin-bottom: 1.5rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  border: none !important;
+  border-left: 5px solid var(--viridis-purple) !important;
+  border-bottom: 2px solid rgba(72, 38, 119, 0.3) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(72, 38, 119, 0.03) !important;
+  border-radius: 12px !important;
+  position: relative !important;
+}
+
+#technical-deep-dive::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg,
+    var(--viridis-purple) 0%,
+    var(--viridis-cyan) 50%,
+    transparent 100%);
+  opacity: 0.5;
 }

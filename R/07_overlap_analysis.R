@@ -240,7 +240,7 @@ plot_overlap_venn <- function(overlap_stats, save_path = NULL) {
   # Save if requested
   if (!is.null(save_path)) {
     dir.create(dirname(save_path), recursive = TRUE, showWarnings = FALSE)
-    ggplot2::ggsave(save_path, p, width = 10, height = 8, dpi = 300)
+    ggplot2::ggsave(save_path, p, width = 10, height = 8, dpi = 300, bg = "transparent")
     cat(sprintf("\n✓ Venn diagram saved to: %s\n", save_path))
   }
 
@@ -367,7 +367,7 @@ plot_overlap_importance_heatmap <- function(reverse_prediction_results,
     # Adjust height based on number of proteins
     plot_height <- max(6, 0.4 * nrow(plot_data))
 
-    ggplot2::ggsave(save_path, p, width = 10, height = plot_height, dpi = 300)
+    ggplot2::ggsave(save_path, p, width = 10, height = plot_height, dpi = 300, bg = "transparent")
     cat(sprintf("\n✓ Importance heatmap saved to: %s\n", save_path))
   }
 
@@ -481,7 +481,7 @@ plot_overlap_concordance <- function(reverse_prediction_results,
   # Save if requested
   if (!is.null(save_path)) {
     dir.create(dirname(save_path), recursive = TRUE, showWarnings = FALSE)
-    ggplot2::ggsave(save_path, p, width = 12, height = 10, dpi = 300)
+    ggplot2::ggsave(save_path, p, width = 12, height = 10, dpi = 300, bg = "transparent")
     cat(sprintf("\n✓ Concordance plot saved to: %s\n", save_path))
   }
 

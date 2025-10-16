@@ -434,7 +434,7 @@ create_beta_beta_plot <- function(italy_results,
 
   # Save if requested
   if (!is.null(save_path)) {
-    ggsave(save_path, plot = p, width = 8, height = 6, dpi = 300)
+    ggsave(save_path, plot = p, width = 8, height = 6, dpi = 300, bg = "transparent")
     message(sprintf("\nPlot saved: %s", save_path))
   }
 

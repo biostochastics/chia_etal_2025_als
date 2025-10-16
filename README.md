@@ -11,7 +11,7 @@
 ## Read the Full Analysis
 
 **For comprehensive findings, methodology, and discussion:**
-**→ [📄 Full Published Report](https://biostochastics.quarto.pub/confounding-by-geography-and-anticoagulant-compromises-proposed-als-diagnostic-model-and-biomarkers-d667/)**
+**→ [📄 Full Published Report](https://biostochastics.quarto.pub/confounding-by-geography-and-anticoagulant-compromise-proposed-als-model/)**
 
 *(Source: [confounding_investigation.qmd](reports/confounding_investigation.qmd))*
 
@@ -77,7 +77,7 @@ cd ..
 
 **Note:** We do not redistribute the original data to respect data sharing agreements.
 
-### Step 4: Run Analysis Pipeline
+### Step 4: Run Integrated Pipeline
 
 ```r
 library(targets)
@@ -85,20 +85,21 @@ library(targets)
 # View pipeline structure (optional)
 tar_visnetwork()
 
-# Execute all analyses
+# Execute all analyses AND generate report
 tar_make()
 ```
 
-**Output:** Results saved to `_targets/objects/` and `outputs/`
+**What this does:**
+- Loads and processes the OLINK data
+- Runs all statistical analyses (confounding quantification, ML models, differential expression)
+- Generates all figures and saves them to `outputs/figures/`
+- **Automatically renders the Quarto report** when analyses complete
 
-### Step 5: Generate Report
+**Output:**
+- Analysis results: `_targets/objects/` and `outputs/`
+- **Final report:** `reports/confounding_investigation.html`
 
-```r
-# Render comprehensive Quarto report
-quarto::quarto_render("reports/confounding_investigation.qmd")
-```
-
-**Output:** `reports/confounding_investigation.html`
+**Note:** The report is integrated into the pipeline via `tar_quarto()` (see `_targets.R:798-805`). The report automatically rebuilds when upstream analyses change, ensuring reproducibility.
 
 ---
 

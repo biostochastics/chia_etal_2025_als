@@ -20,6 +20,7 @@ tar_option_set(
     "tidyverse",
     "data.table",
     "dtplyr",
+    "here",
 
     # Statistical analysis
     "broom",
@@ -45,6 +46,9 @@ tar_option_set(
   format = "rds", # Default format for targets
   error = "continue" # Continue pipeline even if one target fails
 )
+
+# Preserve source code for computational transparency appendix
+options(keep.source = TRUE)
 
 # Source all R functions
 tar_source("R/")
@@ -204,6 +208,17 @@ list(
     )
   ),
 
+  # Within-country CV (Italy and US separately)
+  # Tests performance in homogeneous anticoagulant contexts
+  tar_target(
+    name = within_country_cv_results,
+    command = within_country_cross_validation(
+      protein_wide,
+      n_folds = 5,
+      seed = 42
+    )
+  ),
+
   # ============================================================================
   # DIFFERENTIAL PROTEIN EXPRESSION ANALYSIS
   # ============================================================================
@@ -242,6 +257,30 @@ list(
       differential_italy,
       differential_us,
       differential_pooled
+    )
+  ),
+
+  # ============================================================================
+  # TUBE TYPE EFFECTS WITH COVARIATE ADJUSTMENT (LIMMA)
+  # ============================================================================
+  # Test for tube type (EDTA vs HEPARIN) effects within diagnosis groups
+  # adjusting for age and sex using limma
+
+  # Tube effects in ALS patients
+  tar_target(
+    name = tube_effects_als,
+    command = calculate_tube_effects_limma(
+      data_with_country,
+      diagnosis_group = "ALS"
+    )
+  ),
+
+  # Tube effects in Healthy controls
+  tar_target(
+    name = tube_effects_healthy,
+    command = calculate_tube_effects_limma(
+      data_with_country,
+      diagnosis_group = "Healthy_control"
     )
   ),
 
@@ -466,13 +505,45 @@ list(
   # BIOMARKER COLLECTIVE TUBE-TYPE PREDICTION (CRITICAL TEST)
   # ============================================================================
 
-  # Test if biomarkers collectively predict tube type
+  # Extract proteins significant in both Italy and US (concordant direction)
+  tar_target(
+    name = concordant_biomarkers,
+    command = protein_concordance %>%
+      dplyr::filter(sig_both, same_direction) %>%
+      dplyr::pull(Assay)
+  ),
+
+  # Test if original 17-protein biomarker panel predicts tube type
   tar_target(
     name = biomarker_tube_prediction,
     command = test_biomarker_tube_prediction(
       protein_wide,
       original_biomarkers,
       reverse_prediction_results,
+      n_folds = 5,
+      seed = 25667777
+    )
+  ),
+
+  # Test if concordant biomarkers predict tube type
+  tar_target(
+    name = concordant_tube_prediction,
+    command = test_biomarker_tube_prediction(
+      protein_wide,
+      concordant_biomarkers,
+      reverse_prediction_results,
+      n_folds = 5,
+      seed = 25667777
+    )
+  ),
+
+  # Test top N proteins for tube type prediction
+  tar_target(
+    name = top_proteins_tube_prediction,
+    command = test_top_proteins_tube_prediction(
+      protein_wide,
+      reverse_prediction_results,
+      n_top = 10,
       n_folds = 5,
       seed = 25667777
     )
@@ -568,6 +639,16 @@ list(
     )
   ),
 
+  # 7b. Effect size correlation by protein set (All vs Pooled-significant)
+  tar_target(
+    name = viz_correlation_by_set,
+    command = plot_effect_correlation_by_set(
+      protein_concordance,
+      differential_pooled,
+      save_path = "outputs/figures/07b_effect_correlation_by_set.png"
+    )
+  ),
+
   # 8. Comprehensive summary panel
   tar_target(
     name = viz_summary_panel,
@@ -622,6 +703,28 @@ list(
     command = plot_effect_decomposition_ratios(
       effect_decomposition,
       save_path = "outputs/figures/11_effect_decomposition.png"
+    )
+  ),
+
+  # 12a. Tube effect size distribution in healthy controls (full range, labeled outliers)
+  tar_target(
+    name = viz_tube_effect_distribution_full,
+    command = plot_tube_effect_size_distribution(
+      tube_effects_healthy,
+      save_path = "outputs/figures/12a_tube_effect_distribution_full.png",
+      xlim_range = NULL,
+      label_outliers = FALSE
+    )
+  ),
+
+  # 12b. Tube effect size distribution in healthy controls (zoomed to -1000 to 1000)
+  tar_target(
+    name = viz_tube_effect_distribution_zoomed,
+    command = plot_tube_effect_size_distribution(
+      tube_effects_healthy,
+      save_path = "outputs/figures/12b_tube_effect_distribution_zoomed.png",
+      xlim_range = c(-1000, 1000),
+      label_outliers = TRUE
     )
   ),
 
@@ -736,5 +839,25 @@ list(
         )
       )
     }
+  ),
+
+  # ============================================================================
+  # COMPUTATIONAL TRANSPARENCY APPENDIX
+  # ============================================================================
+  # NOTE: Appendix metadata (tar_meta(), tar_manifest(), tar_network()) is
+  # called directly in the Quarto document appendix chunks, not as a target.
+  # This avoids the limitation that tar_meta() cannot be called during pipeline.
+
+  # ============================================================================
+  # REPORT GENERATION
+  # ============================================================================
+
+  # Integrate main report into pipeline
+  # Report automatically rebuilds when upstream targets change
+  tarchetypes::tar_quarto(
+    name = main_report,
+    path = "reports/confounding_investigation.qmd",
+    extra_files = c("reports/references.bib", "reports/nature.csl", "reports/custom-styles-dark.css"),
+    quiet = FALSE
   )
 )

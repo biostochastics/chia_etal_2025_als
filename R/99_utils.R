@@ -28,8 +28,8 @@ theme_dark_scientific <- function(base_size = 12, base_family = "") {
   # analysis sessions while maintaining WCAG AA contrast ratios for accessibility
   theme_minimal(base_size = base_size, base_family = base_family) +
     theme(
-      # Backgrounds - ultra-dark with purple-black undertones
-      plot.background = element_rect(fill = "#0B0B0F", color = NA),
+      # Backgrounds - dark purple-gray matching CSS --bg-surface: #151520
+      plot.background = element_rect(fill = "#151520", color = NA),
       panel.background = element_rect(fill = "#151520", color = NA),
 
       # Grid lines - viridis teal (50%) provides subtle guidance without competing with data
@@ -63,21 +63,21 @@ theme_dark_scientific <- function(base_size = 12, base_family = "") {
         lineheight = 1.2
       ),
 
-      # Legend - refined with viridis tones
+      # Legend - refined with viridis tones and transparent backgrounds
       legend.background = element_rect(
-        fill = "#151520",
+        fill = "transparent",
         color = "#6CCE5933",
         linewidth = 0.75
       ),
-      legend.key = element_rect(fill = "#1D1D2E", color = NA),
+      legend.key = element_rect(fill = "transparent", color = NA),
       legend.text = element_text(color = "#C8C8D0", size = rel(0.9)),
       legend.title = element_text(color = "#6CCE59", face = "bold", size = rel(1.0)),
       legend.position = "right",
       legend.justification = "center",
 
-      # Facet strips - viridis gradient backgrounds
+      # Facet strips - transparent backgrounds with viridis borders
       strip.background = element_rect(
-        fill = "#1D1D2E",
+        fill = "transparent",
         color = "#31688E",
         linewidth = 1
       ),
@@ -390,7 +390,7 @@ viridis_heatmap_colors <- function(option = "viridis", n = 100) {
 #' @export
 corrplot_viridis_theme <- function() {
   list(
-    bg = "#0B0B0F",
+    bg = "transparent",
     col = viridis_heatmap_colors(option = "viridis")(200),
     tl.col = "#6CCE59",
     tl.cex = 0.9,
@@ -468,4 +468,83 @@ map_viridis_colors <- function(values, option = "viridis", na_color = "#71717A")
   mapped_colors[is.na(values)] <- na_color
 
   return(mapped_colors)
+}
+
+#' Save ggplot with proper dark background (no white artifacts)
+#'
+#' @description
+#' Saves a ggplot object as PNG with proper handling of dark backgrounds to avoid
+#' white padding/halos caused by premultiplied alpha in standard PNG devices.
+#'
+#' Uses ragg::agg_png device which handles alpha correctly and enforces zero
+#' plot margins with solid dark background to eliminate white stripes.
+#'
+#' @param path Output file path
+#' @param plot ggplot object to save
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @param dpi Resolution in dots per inch (default 300)
+#' @param bg Background color (default matches theme_dark_scientific)
+#' @return Invisibly returns the plot
+#' @export
+#'
+#' @examples
+#' library(ggplot2)
+#' p <- ggplot(mtcars, aes(mpg, wt)) +
+#'   geom_point() +
+#'   theme_dark_scientific()
+#' save_dark_png("myplot.png", p, width = 10, height = 8)
+save_dark_png <- function(path, plot, width, height, dpi = 300, bg = "#151520") {
+  # Enforce dark backgrounds matching CSS --bg-surface for HTML integration
+  plot_final <- plot +
+    ggplot2::theme(
+      plot.background = ggplot2::element_rect(fill = bg, colour = NA),
+      panel.background = ggplot2::element_rect(fill = bg, colour = NA),
+      plot.margin = ggplot2::margin(2, 2, 2, 2)
+    )
+
+  # Use ragg device which handles alpha correctly
+  ggplot2::ggsave(
+    filename = path,
+    plot = plot_final,
+    width = width,
+    height = height,
+    dpi = dpi,
+    device = ragg::agg_png,
+    bg = bg
+  )
+
+  invisible(plot)
+}
+
+#' Helper function for centered titles (summary panels and patchwork)
+#'
+#' @description
+#' Returns theme modifications to center plot titles and subtitles.
+#' Use this when combining plots with patchwork::plot_annotation() or
+#' for standalone summary figures.
+#'
+#' @return ggplot2 theme object with centered title elements
+#' @export
+theme_centered_titles <- function() {
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(hjust = 0.5),
+    plot.subtitle = ggplot2::element_text(hjust = 0.5),
+    plot.caption = ggplot2::element_text(hjust = 0.5)
+  )
+}
+
+#' Helper function for zero margins (patchwork panels)
+#'
+#' @description
+#' Returns theme modifications to remove plot margins.
+#' Useful when combining plots with patchwork where outer annotation
+#' provides spacing.
+#'
+#' @return ggplot2 theme object with zero margins
+#' @export
+theme_zero_margins <- function() {
+  ggplot2::theme(
+    plot.margin = ggplot2::margin(0, 0, 0, 0)
+  )
 }

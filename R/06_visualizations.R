@@ -22,7 +22,122 @@ source("R/99_utils.R")
 # REVERSE PREDICTION VISUALIZATIONS
 # ==============================================================================
 
-#' Plot ROC curve for reverse prediction test
+#' Plot Multi-Model Reverse Prediction Comparison
+#'
+#' @description
+#' Creates ROC curves comparing tube type prediction across three models:
+#' 1. Full model (all proteins)
+#' 2. Top 10 most tube-discriminative proteins
+#' 3. Original biomarker panel
+#'
+#' @param reverse_prediction_results Full model results
+#' @param top_proteins_results Top proteins model results
+#' @param biomarker_results Biomarker panel results
+#' @param save_path Optional path to save figure
+#' @return ggplot2 object
+#' @export
+plot_reverse_prediction_multimodel <- function(reverse_prediction_results,
+                                                top_proteins_results,
+                                                biomarker_results,
+                                                save_path = NULL) {
+  library(ggplot2)
+  library(pROC)
+  library(dplyr)
+
+  # Extract predictions and calculate ROC curves
+  # Full model
+  full_preds <- reverse_prediction_results$model$pred %>%
+    dplyr::filter(
+      mtry == reverse_prediction_results$model$bestTune$mtry,
+      min.node.size == reverse_prediction_results$model$bestTune$min.node.size
+    )
+  roc_full <- pROC::roc(
+    response = full_preds$obs,
+    predictor = full_preds$HEPARIN,
+    levels = c("EDTA", "HEPARIN"),
+    direction = "<"
+  )
+
+  # Top 10 proteins
+  top_preds <- top_proteins_results$predictions
+  roc_top <- pROC::roc(
+    response = top_preds$obs,
+    predictor = top_preds$HEPARIN,
+    levels = c("EDTA", "HEPARIN"),
+    direction = "<"
+  )
+
+  # Biomarkers
+  biomarker_preds <- biomarker_results$predictions
+  roc_biomarker <- pROC::roc(
+    response = biomarker_preds$obs,
+    predictor = biomarker_preds$HEPARIN,
+    levels = c("EDTA", "HEPARIN"),
+    direction = "<"
+  )
+
+  # Create labels
+  full_label <- sprintf("Full Model (AUC = %.3f)", reverse_prediction_results$auc)
+  top_label <- sprintf("Top 10 Proteins (AUC = %.3f)", top_proteins_results$auc)
+  biomarker_label <- sprintf("Biomarker Panel (AUC = %.3f)", biomarker_results$auc)
+
+  # Combine ROC data
+  roc_combined <- rbind(
+    data.frame(
+      fpr = 1 - roc_full$specificities,
+      tpr = roc_full$sensitivities,
+      model = full_label
+    ),
+    data.frame(
+      fpr = 1 - roc_top$specificities,
+      tpr = roc_top$sensitivities,
+      model = top_label
+    ),
+    data.frame(
+      fpr = 1 - roc_biomarker$specificities,
+      tpr = roc_biomarker$sensitivities,
+      model = biomarker_label
+    )
+  )
+
+  # Create color mapping
+  color_values <- c("#FDE724", "#1F9E89", "#B5DE2B")
+  names(color_values) <- c(full_label, top_label, biomarker_label)
+
+  # Create plot
+  p <- ggplot(roc_combined, aes(x = fpr, y = tpr, color = model)) +
+    geom_line(linewidth = 2.5, alpha = 0.9) +
+    geom_abline(
+      slope = 1, intercept = 0, linetype = "dashed",
+      color = "#71717A", linewidth = 1
+    ) +
+    scale_color_manual(
+      name = NULL,
+      values = color_values
+    ) +
+    labs(
+      title = "Reverse Prediction Test: Predicting Tube Type from Proteins",
+      subtitle = "AUC = 0.999 - Near-perfect discrimination indicates tube effects dominate",
+      x = "False Positive Rate (1 - Specificity)",
+      y = "True Positive Rate (Sensitivity)"
+    ) +
+    theme_dark_scientific(base_size = 12) +
+    theme(
+      legend.position = c(0.65, 0.25)
+    ) +
+    coord_equal()
+
+  # Save if requested
+  if (!is.null(save_path)) {
+    save_dark_png(save_path, p, width = 10, height = 8, dpi = 300)
+    cat(sprintf("\n✓ Multi-model reverse prediction ROC saved to: %s\n", save_path))
+  }
+
+  return(p)
+}
+
+
+#' Plot ROC curve for reverse prediction test (Single Model)
 #'
 #' @description
 #' Visualizes the performance of predicting tube type from proteins.
@@ -74,11 +189,11 @@ plot_reverse_prediction_roc <- function(reverse_prediction_results, save_path = 
       x = "False Positive Rate (1 - Specificity)",
       y = "True Positive Rate (Sensitivity)"
     ) +
-    theme_dark_scientific(base_size = 14) +
+    theme_dark_scientific(base_size = 12) +
     coord_equal()
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 8, height = 7, dpi = 300)
+    save_dark_png(save_path, p, width = 8, height = 7, dpi = 300)
     message(sprintf("Saved ROC curve to %s", save_path))
   }
 
@@ -115,7 +230,7 @@ plot_tube_type_features <- function(reverse_prediction_results, save_path = NULL
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 8, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 8, dpi = 300)
     message(sprintf("Saved feature importance plot to %s", save_path))
   }
 
@@ -226,13 +341,12 @@ plot_lcv_roc_curves <- function(lcv_results, pooled_results, save_path = NULL) {
     ) +
     theme_dark_scientific(base_size = 12) +
     theme(
-      legend.position = c(0.65, 0.25),
-      legend.text = element_text(size = 9)
+      legend.position = c(0.65, 0.25)
     ) +
     coord_equal()
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 8, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 8, dpi = 300)
     message(sprintf("Saved ROC curve to: %s", save_path))
   }
 
@@ -371,11 +485,12 @@ plot_performance_comparison <- function(pooled_vs_lcv_comparison, save_path = NU
     theme_dark_scientific(base_size = 12) +
     theme(
       legend.position = "none",
-      panel.grid.major.x = element_blank()
+      panel.grid.major.x = element_blank(),
+      axis.text.x = element_text(size = 10)
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 7, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 7, dpi = 300)
     message(sprintf("Saved performance comparison to: %s", save_path))
   }
 
@@ -432,13 +547,12 @@ plot_confusion_matrices <- function(lcv_results, save_path = NULL) {
     ) +
     theme_dark_scientific(base_size = 12) +
     theme(
-      legend.position = "right",
       panel.grid = element_blank()
     ) +
     coord_equal()
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 12, height = 5, dpi = 300)
+    save_dark_png(save_path, p, width = 14, height = 8, dpi = 300)
     message(sprintf("Saved confusion matrices to: %s", save_path))
   }
 
@@ -490,13 +604,10 @@ plot_protein_overlap_venn <- function(stratified_vs_pooled_comparison, save_path
       )
     ) +
     theme_dark_scientific(base_size = 12) +
-    theme(
-      plot.title = element_text(hjust = 0.5),
-      plot.subtitle = element_text(color = "#FDE724", face = "bold", hjust = 0.5)
-    )
+    theme_centered_titles()
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 8, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 8, dpi = 300)
     message(sprintf("Saved Venn diagram to: %s", save_path))
   }
 
@@ -557,11 +668,12 @@ plot_protein_counts <- function(stratified_vs_pooled_comparison, save_path = NUL
     theme_dark_scientific(base_size = 12) +
     theme(
       legend.position = "none",
-      panel.grid.major.x = element_blank()
+      panel.grid.major.x = element_blank(),
+      axis.text.x = element_text(size = 10)
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 7, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 7, dpi = 300)
     message(sprintf("Saved protein counts to: %s", save_path))
   }
 
@@ -623,17 +735,192 @@ plot_effect_size_correlation <- function(protein_concordance, save_path = NULL) 
       color = "Protein Type"
     ) +
     theme_dark_scientific(base_size = 12) +
-    theme(
-      legend.position = "bottom"
-    ) +
     coord_equal()
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 9, dpi = 300)
+    save_dark_png(save_path, p, width = 12, height = 10, dpi = 300)
     message(sprintf("Saved effect size correlation to: %s", save_path))
   }
 
   return(p)
+}
+
+
+#' Plot effect size correlation by protein set
+#'
+#' @description
+#' Creates side-by-side scatter plots showing effect size correlations between
+#' Italy and US cohorts for different protein sets:
+#' 1. ALL proteins on Olink panel
+#' 2. Proteins significant in pooled analysis
+#'
+#' This addresses the key question: Are effect sizes consistent across cohorts?
+#' Low correlations indicate geographic/tube confounding dominates over biology.
+#'
+#' @param protein_concordance Concordance results (from test_protein_concordance)
+#' @param pooled_results Pooled differential analysis results
+#' @param save_path Path to save figure (optional)
+#' @return ggplot object with side-by-side scatter plots
+#' @export
+plot_effect_correlation_by_set <- function(protein_concordance, pooled_results, save_path = NULL) {
+  library(ggplot2)
+  library(dplyr)
+  library(patchwork)
+
+  # === Panel 1: ALL proteins ===
+  cor_all_pearson <- cor(protein_concordance$logFC_italy,
+    protein_concordance$logFC_us,
+    use = "complete.obs",
+    method = "pearson"
+  )
+
+  cor_all_spearman <- cor(protein_concordance$logFC_italy,
+    protein_concordance$logFC_us,
+    use = "complete.obs",
+    method = "spearman"
+  )
+
+  plot_data_all <- protein_concordance %>%
+    dplyr::mutate(
+      protein_set = "All Olink Proteins",
+      concordant_sig = sig_both & same_direction
+    )
+
+  p_all <- ggplot(plot_data_all, aes(x = logFC_italy, y = logFC_us)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "#888888", alpha = 0.5) +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "#888888", alpha = 0.5) +
+    geom_point(alpha = 0.3, size = 1.8, color = "#71717A") +
+    geom_abline(intercept = 0, slope = 1, color = "#FDE724", linetype = "dashed", linewidth = 1) +
+    geom_smooth(method = "lm", se = FALSE, color = "#FDE724", linewidth = 1.2, alpha = 0.8) +
+    annotate("text",
+      x = Inf, y = Inf,
+      label = sprintf("Pearson r = %.3f\nSpearman ρ = %.3f\nn = %d proteins",
+                      cor_all_pearson, cor_all_spearman, nrow(plot_data_all)),
+      hjust = 1.05, vjust = 1.3,
+      size = 6, fontface = "bold", color = "#FDE724"
+    ) +
+    labs(
+      title = "All Proteins on Olink Panel",
+      subtitle = "Near-zero correlation, slight rank inversion",
+      x = "Log Fold Change (Italy/HEPARIN)",
+      y = "Log Fold Change (US/EDTA)"
+    ) +
+    theme_dark_scientific(base_size = 14) +
+    theme_centered_titles() +
+    theme(
+      legend.background = element_rect(fill = "#151520", colour = NA),
+      legend.key = element_rect(fill = "#151520", colour = NA),
+      plot.background = element_rect(fill = "#151520", colour = NA),
+      panel.background = element_rect(fill = "#151520", colour = NA)
+    ) +
+    coord_equal(xlim = range(plot_data_all$logFC_italy, na.rm = TRUE),
+                ylim = range(plot_data_all$logFC_us, na.rm = TRUE))
+
+  # === Panel 2: Pooled significant proteins ===
+  # Get proteins significant in pooled analysis with large effect sizes (FDR < 0.05 AND |logFC| > 0.5)
+  # This gives n=78 proteins (not n=921 which would be FDR < 0.05 only)
+  pooled_sig_proteins <- pooled_results %>%
+    dplyr::filter(adj.P.Val < 0.05, abs(logFC) > 0.5) %>%
+    dplyr::pull(Assay)
+
+  plot_data_pooled <- protein_concordance %>%
+    dplyr::filter(Assay %in% pooled_sig_proteins) %>%
+    dplyr::mutate(
+      protein_set = "Pooled Significant",
+      concordant_sig = sig_both & same_direction
+    )
+
+  cor_pooled_pearson <- if (nrow(plot_data_pooled) > 2) {
+    cor(plot_data_pooled$logFC_italy,
+        plot_data_pooled$logFC_us,
+        use = "complete.obs",
+        method = "pearson")
+  } else {
+    NA
+  }
+
+  cor_pooled_spearman <- if (nrow(plot_data_pooled) > 2) {
+    cor(plot_data_pooled$logFC_italy,
+        plot_data_pooled$logFC_us,
+        use = "complete.obs",
+        method = "spearman")
+  } else {
+    NA
+  }
+
+  p_pooled <- ggplot(plot_data_pooled, aes(x = logFC_italy, y = logFC_us)) +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "#888888", alpha = 0.5) +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "#888888", alpha = 0.5) +
+    geom_abline(intercept = 0, slope = 1, color = "#888888", linetype = "dotted", linewidth = 0.8) +
+    geom_smooth(method = "lm", se = FALSE, color = "#FDE724", linewidth = 1.2, alpha = 0.8) +
+    geom_point(aes(color = concordant_sig), alpha = 0.8, size = 3, stroke = 0.5) +
+    scale_color_manual(
+      values = c("TRUE" = "#6CCE59", "FALSE" = "#FDE724"),
+      labels = c("TRUE" = "Sig in both cohorts", "FALSE" = "Sig in pooled only"),
+      name = NULL
+    ) +
+    annotate("text",
+      x = Inf, y = Inf,
+      label = sprintf("Pearson r = %.3f\nSpearman ρ = %.3f\nn = %d proteins",
+                      cor_pooled_pearson, cor_pooled_spearman, nrow(plot_data_pooled)),
+      hjust = 1.05, vjust = 1.3,
+      size = 6, fontface = "bold", color = "#FDE724"
+    ) +
+    labs(
+      title = "Pooled-Significant Proteins with Large Effect Sizes (FDR < 0.05, |logFC| > 0.5)",
+      subtitle = "Moderate-to-strong correlation preserved",
+      x = "Log Fold Change (Italy/HEPARIN)",
+      y = "Log Fold Change (US/EDTA)"
+    ) +
+    theme_dark_scientific(base_size = 14) +
+    theme_centered_titles() +
+    theme(
+      legend.background = element_rect(fill = "#151520", colour = NA),
+      legend.key = element_rect(fill = "#151520", colour = NA),
+      plot.background = element_rect(fill = "#151520", colour = NA),
+      panel.background = element_rect(fill = "#151520", colour = NA)
+    ) +
+    coord_equal(xlim = range(plot_data_pooled$logFC_italy, na.rm = TRUE),
+                ylim = range(plot_data_pooled$logFC_us, na.rm = TRUE))
+
+  # Combine panels
+  combined <- p_all | p_pooled
+
+  combined <- combined +
+    plot_annotation(
+      title = "Effect Size Concordance Between Italy and US Cohorts",
+      subtitle = "Left: Rank inversion across all proteins (Spearman ρ < 0). Right: Moderate concordance in pooled-significant proteins.",
+      caption = "Regression lines (yellow) show linear fit. Dotted diagonal = perfect concordance (y=x).",
+      theme = theme_dark_scientific(base_size = 14) +
+        theme_centered_titles() +
+        theme(
+          plot.background = element_rect(fill = "#151520", color = NA),
+          panel.background = element_rect(fill = "#151520", color = NA)
+        )
+    ) &
+    theme(
+      plot.background = element_rect(fill = "#151520", color = NA),
+      panel.background = element_rect(fill = "#151520", color = NA)
+    )
+
+  if (!is.null(save_path)) {
+    save_dark_png(save_path, combined, width = 14, height = 7, dpi = 300)
+    message(sprintf("Saved effect size correlation comparison to: %s", save_path))
+    message(sprintf("  - All proteins: Pearson r = %.3f, Spearman ρ = %.3f (n = %d)",
+                    cor_all_pearson, cor_all_spearman, nrow(plot_data_all)))
+    message(sprintf("  - Pooled significant: Pearson r = %.3f, Spearman ρ = %.3f (n = %d)",
+                    cor_pooled_pearson, cor_pooled_spearman, nrow(plot_data_pooled)))
+  }
+
+  return(list(
+    plot = combined,
+    cor_all_pearson = cor_all_pearson,
+    cor_all_spearman = cor_all_spearman,
+    cor_pooled_pearson = cor_pooled_pearson,
+    cor_pooled_spearman = cor_pooled_spearman,
+    n_all = nrow(plot_data_all),
+    n_pooled = nrow(plot_data_pooled)
+  ))
 }
 
 
@@ -679,14 +966,14 @@ plot_confounding_structure <- function(sample_metadata, save_path = NULL) {
       x = "Diagnosis",
       y = "Number of Samples"
     ) +
-    theme_dark_scientific(base_size = 13) +
+    theme_dark_scientific(base_size = 12) +
     theme(
       axis.text.x = element_text(angle = 45, hjust = 1),
       legend.position = "top"
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 6, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 6, dpi = 300)
     message(sprintf("Saved confounding structure plot to %s", save_path))
   }
 
@@ -749,7 +1036,7 @@ plot_pca_tube_vs_diagnosis <- function(protein_wide, sample_metadata = NULL, sav
       x = sprintf("PC1 (%.1f%% variance)", var_explained[1]),
       y = sprintf("PC2 (%.1f%% variance)", var_explained[2])
     ) +
-    theme_dark_scientific(base_size = 13) +
+    theme_dark_scientific(base_size = 12) +
     theme(
       legend.position = "right"
     )
@@ -767,7 +1054,7 @@ plot_pca_tube_vs_diagnosis <- function(protein_wide, sample_metadata = NULL, sav
       x = sprintf("PC1 (%.1f%% variance)", var_explained[1]),
       y = sprintf("PC2 (%.1f%% variance)", var_explained[2])
     ) +
-    theme_dark_scientific(base_size = 13) +
+    theme_dark_scientific(base_size = 12) +
     theme(
       legend.position = "right"
     )
@@ -776,7 +1063,7 @@ plot_pca_tube_vs_diagnosis <- function(protein_wide, sample_metadata = NULL, sav
   combined_plot <- patchwork::wrap_plots(p1, p2, ncol = 1)
 
   if (!is.null(save_path)) {
-    ggsave(save_path, combined_plot, width = 10, height = 12, dpi = 300)
+    save_dark_png(save_path, combined_plot, width = 10, height = 12, dpi = 300)
     message(sprintf("Saved PCA plots to %s", save_path))
   }
 
@@ -860,7 +1147,7 @@ plot_tube_robust_forest <- function(protein_concordance, top_n = 15, save_path =
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 8, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 8, dpi = 300)
     message(sprintf("Saved forest plot to: %s", save_path))
   }
 
@@ -989,11 +1276,11 @@ plot_robust_reverse_prediction_comparison <- function(robust_reverse_pred,
     theme(
       legend.position = "none",
       panel.grid.major.x = element_blank(),
-      plot.subtitle = element_text(color = severity_color, face = "bold")
+      axis.text.x = element_text(size = 10)
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 7, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 7, dpi = 300)
     message(sprintf("Saved reverse prediction comparison to: %s", save_path))
   }
 
@@ -1047,13 +1334,11 @@ plot_healthy_tube_effects <- function(healthy_effects, top_n = 15, save_path = N
     ) +
     theme_dark_scientific(base_size = 12) +
     theme(
-      legend.position = "bottom",
-      panel.grid.major.y = element_blank(),
-      plot.subtitle = element_text(color = "#FDE724", face = "bold")
+      panel.grid.major.y = element_blank()
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 8, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 8, dpi = 300)
     message(sprintf("Saved healthy tube effects to: %s", save_path))
   }
 
@@ -1082,15 +1367,15 @@ plot_effect_decomposition_ratios <- function(effect_decomp, save_path = NULL) {
     dplyr::mutate(
       category = dplyr::case_when(
         ratio_tube_to_disease > 1.0 ~ "Tube > Disease",
-        ratio_tube_to_disease > 0.5 ~ "Tube ≥ 50% of Disease",
-        ratio_tube_to_disease > 0.2 ~ "Tube 20-50% of Disease",
-        TRUE ~ "Tube < 20% of Disease"
+        ratio_tube_to_disease > 0.5 ~ "Tube (ES >= 50% Disease)",
+        ratio_tube_to_disease > 0.2 ~ "Tube (ES 20-50% Disease)",
+        TRUE ~ "Tube (ES < 20% Disease)"
       ),
       category = factor(category, levels = c(
         "Tube > Disease",
-        "Tube ≥ 50% of Disease",
-        "Tube 20-50% of Disease",
-        "Tube < 20% of Disease"
+        "Tube (ES >= 50% Disease)",
+        "Tube (ES 20-50% Disease)",
+        "Tube (ES < 20% Disease)"
       ))
     )
 
@@ -1101,10 +1386,8 @@ plot_effect_decomposition_ratios <- function(effect_decomp, save_path = NULL) {
   n_severe <- sum(plot_data$ratio_tube_to_disease >= 0.5, na.rm = TRUE)
   pct_severe <- 100 * n_severe / nrow(plot_data)
 
-  # Label top 5 most problematic proteins
-  proteins_to_label <- plot_data %>%
-    dplyr::arrange(dplyr::desc(ratio_tube_to_disease)) %>%
-    dplyr::slice_head(n = 5)
+  # Label ALL proteins (only 22 total, so manageable)
+  proteins_to_label <- plot_data
 
   p <- ggplot(plot_data, aes(x = abs_disease_effect, y = abs_tube_effect, color = category)) +
     # Diagonal line (tube = disease)
@@ -1117,43 +1400,190 @@ plot_effect_decomposition_ratios <- function(effect_decomp, save_path = NULL) {
     ggrepel::geom_text_repel(
       data = proteins_to_label,
       aes(label = protein),
-      size = 3,
+      size = 5.5,
       color = "#EEEEEE",
       box.padding = 0.5,
-      max.overlaps = 20
+      max.overlaps = 20,
+      fontface = "bold"
     ) +
     scale_color_manual(values = c(
       "Tube > Disease" = "#FDE724", # viridis yellow (100%)
-      "Tube ≥ 50% of Disease" = "#B5DE2B", # viridis yellow-green (90%)
-      "Tube 20-50% of Disease" = "#6CCE59", # viridis lime (80%)
-      "Tube < 20% of Disease" = "#1F9E89" # viridis jade (60%)
+      "Tube (ES >= 50% Disease)" = "#B5DE2B", # viridis yellow-green (90%)
+      "Tube (ES 20-50% Disease)" = "#6CCE59", # viridis lime (80%)
+      "Tube (ES < 20% Disease)" = "#1F9E89" # viridis jade (60%)
     )) +
     annotate("text",
       x = max(plot_data$abs_disease_effect, na.rm = TRUE) * 0.7,
       y = max(plot_data$abs_tube_effect, na.rm = TRUE) * 0.9,
       label = sprintf("y = x\n(Tube = Disease)"),
-      color = "#FDE724", size = 3, fontface = "italic"
+      color = "#FDE724", size = 5, fontface = "bold"
+    ) +
+    annotate("text",
+      x = max(plot_data$abs_disease_effect, na.rm = TRUE) * 0.6,
+      y = max(plot_data$abs_disease_effect, na.rm = TRUE) * 0.3,
+      label = sprintf("y = 0.5x\n(Tube = 50%% Disease)"),
+      color = "#6CCE59", size = 5, fontface = "bold"
     ) +
     labs(
       title = "Effect Size Decomposition: Tube Type vs Disease Effects",
       subtitle = sprintf(
-        "⚠️ SEVERE: %d/%d proteins (%.1f%%) have tube effects ≥50%% of disease effects",
+        "⚠️ SEVERE: %d/%d proteins (%.1f%%) have tube effects >=50%% of disease effects",
         n_severe, nrow(plot_data), pct_severe
       ),
       x = "Absolute Disease Effect (|ALS - Control|)",
       y = "Absolute Tube Effect (|US - Italy|)",
       color = "Entanglement Level"
     ) +
-    theme_dark_scientific(base_size = 12) +
-    theme(
-      legend.position = "bottom",
-      plot.subtitle = element_text(color = "#FDE724", face = "bold")
-    ) +
-    coord_equal()
+    theme_dark_scientific(base_size = 14)
 
   if (!is.null(save_path)) {
-    ggsave(save_path, p, width = 10, height = 9, dpi = 300)
+    save_dark_png(save_path, p, width = 10, height = 14, dpi = 300)
     message(sprintf("Saved effect decomposition to: %s", save_path))
+  }
+
+  return(p)
+}
+
+
+#' Plot distribution of tube effect sizes in healthy controls
+#'
+#' @description
+#' Histogram showing the distribution of tube type effects (HEPARIN vs EDTA)
+#' in healthy controls, expressed as percent change. This demonstrates the
+#' magnitude and direction of technical artifacts in disease-free samples.
+#'
+#' @param tube_effects_healthy Results from tube_effects_in_healthy (limma analysis)
+#' @param save_path Path to save figure (optional)
+#' @param xlim_range Optional xlim range as c(min, max). If NULL, shows full range.
+#' @param label_outliers If TRUE, label proteins outside xlim range
+#' @return ggplot object
+#' @export
+plot_tube_effect_size_distribution <- function(tube_effects_healthy,
+                                                save_path = NULL,
+                                                xlim_range = NULL,
+                                                label_outliers = FALSE) {
+  library(ggplot2)
+  library(dplyr)
+  library(ggrepel)
+
+  # Convert logFC to percent change: (2^logFC - 1) * 100
+  # This accounts for direction automatically (+ = increase, - = decrease)
+  plot_data <- tube_effects_healthy %>%
+    dplyr::mutate(
+      percent_change = (2^logFC - 1) * 100,
+      significant = adj.P.Val < 0.05,
+      abs_pct_change = abs(percent_change)
+    )
+
+  # Calculate summary statistics
+  n_total <- nrow(plot_data)
+  n_sig <- sum(plot_data$significant)
+  median_abs_change <- median(plot_data$abs_pct_change, na.rm = TRUE)
+  median_abs_change_sig <- median(plot_data$abs_pct_change[plot_data$significant], na.rm = TRUE)
+
+  # Count extreme effects
+  n_extreme <- sum(plot_data$abs_pct_change > 100, na.rm = TRUE)
+  n_large <- sum(plot_data$abs_pct_change > 50, na.rm = TRUE)
+
+  # Identify outliers if xlim_range is provided
+  outliers_data <- NULL
+  if (!is.null(xlim_range) && label_outliers) {
+    outliers_data <- plot_data %>%
+      dplyr::filter(percent_change < xlim_range[1] | percent_change > xlim_range[2]) %>%
+      dplyr::mutate(
+        label_x = ifelse(percent_change < xlim_range[1], xlim_range[1], xlim_range[2]),
+        label_text = sprintf("%s\n%.0f%%", Assay, percent_change)
+      )
+  }
+
+  # Count outliers
+  n_outliers_left <- if (!is.null(xlim_range)) sum(plot_data$percent_change < xlim_range[1], na.rm = TRUE) else 0
+  n_outliers_right <- if (!is.null(xlim_range)) sum(plot_data$percent_change > xlim_range[2], na.rm = TRUE) else 0
+
+  p <- ggplot(plot_data, aes(x = percent_change, fill = significant)) +
+    geom_histogram(bins = 60, alpha = 0.8, color = "#555555", linewidth = 0.3) +
+    geom_vline(xintercept = 0, linetype = "solid", color = "#EEEEEE", linewidth = 1) +
+    geom_vline(
+      xintercept = median(plot_data$percent_change[plot_data$significant], na.rm = TRUE),
+      linetype = "dashed", color = "#FDE724", linewidth = 1
+    ) +
+    scale_fill_manual(
+      values = c("TRUE" = "#FDE724", "FALSE" = "#71717A"),
+      labels = c("TRUE" = sprintf("Significant (n=%d)", n_sig),
+                 "FALSE" = sprintf("Not significant (n=%d)", n_total - n_sig)),
+      name = NULL
+    ) +
+    annotate("text",
+      x = Inf, y = Inf,
+      label = sprintf(
+        "Median |%%Δ| (all): %.1f%%\nMedian |%%Δ| (sig): %.1f%%\n>100%% change: %d proteins\n>50%% change: %d proteins",
+        median_abs_change, median_abs_change_sig, n_extreme, n_large
+      ),
+      hjust = 1.05, vjust = 1.1,
+      size = 4, fontface = "bold", color = "#EEEEEE",
+      lineheight = 1.2
+    ) +
+    labs(
+      title = "Distribution of Tube Type Effects in Healthy Controls",
+      subtitle = sprintf(
+        "⚠️ %d/%d proteins (%.1f%%) show significant tube effects WITHOUT disease (FDR < 0.05)",
+        n_sig, n_total, 100 * n_sig / n_total
+      ),
+      x = "Percent Change (US/EDTA vs Italy/HEPARIN)",
+      y = "Number of Proteins",
+      caption = "Percent change calculated as (2^logFC - 1) × 100. Positive = higher in US/EDTA, Negative = higher in Italy/HEPARIN."
+    ) +
+    theme_dark_scientific(base_size = 12) +
+    theme(
+      legend.position = c(0.85, 0.85),
+      legend.background = element_rect(fill = "#151520", color = "#555555", linewidth = 0.5),
+      plot.caption = element_text(hjust = 0, size = 9, color = "#AAAAAA")
+    )
+
+  # Apply xlim if provided
+  if (!is.null(xlim_range)) {
+    p <- p + coord_cartesian(xlim = xlim_range)
+
+    # Add outlier indicators
+    if (n_outliers_left > 0) {
+      p <- p + annotate("text",
+        x = xlim_range[1], y = Inf,
+        label = sprintf("← %d proteins", n_outliers_left),
+        hjust = 0, vjust = 2,
+        size = 3.5, fontface = "bold", color = "#FDE724"
+      )
+    }
+
+    if (n_outliers_right > 0) {
+      p <- p + annotate("text",
+        x = xlim_range[2], y = Inf,
+        label = sprintf("%d proteins →", n_outliers_right),
+        hjust = 1, vjust = 2,
+        size = 3.5, fontface = "bold", color = "#FDE724"
+      )
+    }
+
+    # Label outliers if requested
+    if (label_outliers && !is.null(outliers_data) && nrow(outliers_data) > 0) {
+      p <- p +
+        ggrepel::geom_text_repel(
+          data = outliers_data,
+          aes(x = label_x, y = 0, label = label_text),
+          color = "#FDE724",
+          size = 3,
+          fontface = "bold",
+          direction = "y",
+          nudge_x = ifelse(outliers_data$percent_change < xlim_range[1], -50, 50),
+          segment.color = "#FDE724",
+          segment.size = 0.5,
+          max.overlaps = 20
+        )
+    }
+  }
+
+  if (!is.null(save_path)) {
+    save_dark_png(save_path, p, width = 12, height = 8, dpi = 300)
+    message(sprintf("Saved tube effect size distribution to: %s", save_path))
   }
 
   return(p)
@@ -1190,15 +1620,12 @@ create_summary_figure <- function(reverse_prediction_results, sample_metadata,
     plot_annotation(
       title = "ALS Biomarker Study: Evidence of Severe Confounding Bias",
       subtitle = "Reverse prediction AUC = 0.999 indicates technical artifacts overwhelm disease biology",
-      theme = theme_dark_scientific(base_size = 14) +
-        theme(
-          plot.title = element_text(size = 18, face = "bold", color = "#F0F6FC"),
-          plot.subtitle = element_text(size = 14, color = "#FDE724")
-        )
+      theme = theme_dark_scientific(base_size = 12) +
+        theme_centered_titles()
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, summary_fig, width = 16, height = 12, dpi = 300)
+    save_dark_png(save_path, summary_fig, width = 16, height = 12, dpi = 300)
     message(sprintf("Saved summary figure to %s", save_path))
   }
 
@@ -1239,15 +1666,12 @@ create_summary_panel <- function(lcv_results, pooled_results,
     plot_annotation(
       title = "Geographic Confounding Investigation: Summary of Key Findings",
       subtitle = "⚠️ Multiple converging lines of evidence reveal severe geographic/tube type confounding",
-      theme = theme_dark_scientific(base_size = 14) +
-        theme(
-          plot.title = element_text(size = 16, hjust = 0.5),
-          plot.subtitle = element_text(color = "#FDE724", face = "bold", size = 12, hjust = 0.5)
-        )
+      theme = theme_dark_scientific(base_size = 12) +
+        theme_centered_titles()
     )
 
   if (!is.null(save_path)) {
-    ggsave(save_path, combined, width = 16, height = 14, dpi = 300)
+    save_dark_png(save_path, combined, width = 16, height = 14, dpi = 300)
     message(sprintf("Saved summary panel to: %s", save_path))
   }
 

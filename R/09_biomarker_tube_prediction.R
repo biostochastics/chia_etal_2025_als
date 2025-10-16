@@ -326,7 +326,7 @@ plot_biomarker_tube_comparison <- function(biomarker_tube_results,
   # Save if requested
   if (!is.null(save_path)) {
     dir.create(dirname(save_path), recursive = TRUE, showWarnings = FALSE)
-    ggplot2::ggsave(save_path, combined, width = 16, height = 12, dpi = 300)
+    ggplot2::ggsave(save_path, combined, width = 16, height = 12, dpi = 300, bg = "transparent")
     cat(sprintf("\n✓ Biomarker tube prediction comparison saved to: %s\n", save_path))
   }
 
@@ -405,4 +405,189 @@ summarize_biomarker_tube_prediction <- function(biomarker_tube_results,
 
   cat(report)
   return(report)
+}
+
+
+#' Test Top Proteins' Ability to Predict Tube Type
+#'
+#' @description
+#' Trains a Random Forest model using ONLY the top N proteins (by importance)
+#' to predict tube type (HEPARIN vs EDTA).
+#'
+#' @param protein_wide Wide-format protein data
+#' @param reverse_prediction_results Full reverse prediction results with importance rankings
+#' @param n_top Number of top proteins to use (default: 10)
+#' @param n_folds Number of CV folds (default: 5)
+#' @param seed Random seed for reproducibility
+#' @return List with model results
+#' @export
+test_top_proteins_tube_prediction <- function(protein_wide,
+                                              reverse_prediction_results,
+                                              n_top = 10,
+                                              n_folds = 5,
+                                              seed = 42) {
+  library(dplyr)
+  library(caret)
+
+  cat(sprintf("\n=== TESTING TOP %d PROTEINS TUBE-TYPE PREDICTION ===\n\n", n_top))
+
+  # Filter to clean samples
+  data_clean <- protein_wide %>%
+    dplyr::filter(!is.na(Plasma_collection_tube_type)) %>%
+    dplyr::select(where(~ !all(is.na(.))))
+
+  # Get top N proteins by importance
+  top_proteins <- head(reverse_prediction_results$top_features$protein, n_top)
+
+  cat(sprintf("Top %d proteins:\n", n_top))
+  cat(paste(top_proteins, collapse = ", "), "\n\n")
+
+  # Outcome: tube type (binary)
+  y <- factor(data_clean$Plasma_collection_tube_type, levels = c("EDTA", "HEPARIN"))
+
+  # Features: ONLY the top proteins
+  X_top <- data_clean %>%
+    dplyr::select(dplyr::all_of(top_proteins))
+
+  cat(sprintf("Training Random Forest with %d top proteins...\n", ncol(X_top)))
+
+  # Set seed
+  set.seed(seed)
+
+  # Cross-validation setup
+  train_control <- trainControl(
+    method = "cv",
+    number = n_folds,
+    classProbs = TRUE,
+    summaryFunction = twoClassSummary,
+    savePredictions = "final",
+    verboseIter = FALSE
+  )
+
+  # Train model
+  rf_top <- caret::train(
+    x = X_top,
+    y = y,
+    method = "ranger",
+    trControl = train_control,
+    metric = "ROC",
+    num.trees = 500,
+    importance = "permutation"
+  )
+
+  # Extract performance metrics
+  top_auc <- max(rf_top$results$ROC)
+  top_sens <- rf_top$results$Sens[which.max(rf_top$results$ROC)]
+  top_spec <- rf_top$results$Spec[which.max(rf_top$results$ROC)]
+
+  # Print results
+  cat("\n=== RESULTS ===\n\n")
+  cat(sprintf("Top-%d model: AUC = %.4f\n", n_top, top_auc))
+  cat(sprintf("  Sensitivity: %.4f\n", top_sens))
+  cat(sprintf("  Specificity: %.4f\n\n", top_spec))
+
+  # Get predictions for ROC curve
+  predictions <- rf_top$pred %>%
+    dplyr::filter(mtry == rf_top$bestTune$mtry)
+
+  # Compile results
+  results <- list(
+    model = rf_top,
+    predictions = predictions,
+    n_proteins = n_top,
+    proteins = top_proteins,
+    auc = top_auc,
+    sensitivity = top_sens,
+    specificity = top_spec
+  )
+
+  return(results)
+}
+
+
+#' Test NEFL's Ability to Predict Tube Type
+#'
+#' @description
+#' Trains a simple logistic regression using ONLY NEFL protein
+#' to predict tube type (HEPARIN vs EDTA).
+#'
+#' @param protein_wide Wide-format protein data
+#' @param n_folds Number of CV folds (default: 5)
+#' @param seed Random seed for reproducibility
+#' @return List with model results
+#' @export
+test_nefl_tube_prediction <- function(protein_wide,
+                                      n_folds = 5,
+                                      seed = 42) {
+  library(dplyr)
+  library(caret)
+
+  cat("\n=== TESTING NEFL-ONLY TUBE-TYPE PREDICTION ===\n\n")
+
+  # Filter to clean samples
+  data_clean <- protein_wide %>%
+    dplyr::filter(!is.na(Plasma_collection_tube_type)) %>%
+    dplyr::select(where(~ !all(is.na(.))))
+
+  # Check if NEFL is available
+  if (!"NEFL" %in% colnames(data_clean)) {
+    stop("NEFL not found in dataset")
+  }
+
+  # Outcome: tube type (binary)
+  y <- factor(data_clean$Plasma_collection_tube_type, levels = c("EDTA", "HEPARIN"))
+
+  # Feature: ONLY NEFL
+  X_nefl <- data_clean %>%
+    dplyr::select(NEFL)
+
+  cat("Training logistic regression with NEFL alone...\n")
+
+  # Set seed
+  set.seed(seed)
+
+  # Cross-validation setup
+  train_control <- trainControl(
+    method = "cv",
+    number = n_folds,
+    classProbs = TRUE,
+    summaryFunction = twoClassSummary,
+    savePredictions = "final",
+    verboseIter = FALSE
+  )
+
+  # Train model (using glm for single predictor)
+  glm_nefl <- caret::train(
+    x = X_nefl,
+    y = y,
+    method = "glm",
+    family = "binomial",
+    trControl = train_control,
+    metric = "ROC"
+  )
+
+  # Extract performance metrics
+  nefl_auc <- max(glm_nefl$results$ROC)
+  nefl_sens <- glm_nefl$results$Sens[which.max(glm_nefl$results$ROC)]
+  nefl_spec <- glm_nefl$results$Spec[which.max(glm_nefl$results$ROC)]
+
+  # Print results
+  cat("\n=== RESULTS ===\n\n")
+  cat(sprintf("NEFL-only model: AUC = %.4f\n", nefl_auc))
+  cat(sprintf("  Sensitivity: %.4f\n", nefl_sens))
+  cat(sprintf("  Specificity: %.4f\n\n", nefl_spec))
+
+  # Get predictions for ROC curve
+  predictions <- glm_nefl$pred
+
+  # Compile results
+  results <- list(
+    model = glm_nefl,
+    predictions = predictions,
+    auc = nefl_auc,
+    sensitivity = nefl_sens,
+    specificity = nefl_spec
+  )
+
+  return(results)
 }
