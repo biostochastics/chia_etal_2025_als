@@ -2,7 +2,7 @@
 title: "Confounding by geography and anticoagulant compromises proposed ALS diagnostic model and biomarkers"
 subtitle: "Re-analysis of Chia et al. (2025)"
 author: "Sergey A. Kornilov, PhD (Biostochastics, LLC)"
-date: "2025-10-15"
+date: "2025-10-18"
 bibliography: references.bib
 csl: nature.csl
 link-citations: true
@@ -117,7 +117,9 @@ tar_load(c(
 
 ## Key Findings
 
-This investigation examines severe confounding bias in the published ALS biomarker study [@chia2025]. Our reanalysis reveals critical methodological concerns:
+**Our reanalysis reveals that measurement logistics, not disease biology, dominate the reported diagnostic signal.** We find perfect site–tube correlation (Cramér's V=1.0), an 18.2% performance inflation when moving from pooled cross-validation to leave-site-out validation (pooled CV AUC: 0.931 → LCV AUC: 0.770), catastrophic generalization failure with 1.8% LCV sensitivity, and a 1.24 NPX NEFL elevation artifact in healthy controls. These magnitudes indicate the classifier is primarily learning tube/site provenance rather than ALS biology.
+
+This investigation examines severe confounding bias in the published ALS biomarker study [@chia2025]. Our multi-method validation framework provides converging evidence:
 
 ::: {.callout-important appearance="minimal"}
 ## <i class="bi bi-exclamation-triangle-fill"></i> Critical Finding #1: Proteins Predict Tube Type
@@ -148,9 +150,9 @@ Models trained on one geographic cohort fail to generalize to another.
 
 ::: {.callout-important appearance="minimal"}
 ## Critical Finding #4: UK Biobank External Validation
-**Reported 99.1% AUC on simplified validation task**
+**Reported 99.1% AUC does not address multi-class, multi-matrix generalization**
 
-The original study's UK Biobank "validation" (13 ALS vs 23,601 healthy controls) uses EDTA tubes exclusively, excludes other neurological diseases (ONDs), and relies on extreme class imbalance—conditions that inflate performance metrics through the same confounding mechanism rather than testing biological generalizability.
+The UK Biobank validation (13 ALS vs 23,601 healthy controls) likely used EDTA plasma exclusively (standard UKB protocol), presenting a far simpler problem than the study's stated objective: a binary ALS-vs-healthy task on a single matrix, not a multi-class (ALS vs ONDs vs healthy), multi-matrix challenge. Under the confounding we document, the model effectively learns 'EDTA = not ALS'—so an EDTA-only healthy control set will appear easy even if biological signal is weak. The extreme class imbalance further inflates aggregate metrics (AUC, specificity) while masking sensitivity failures. Consequently, the UKB result cannot validate discrimination against ONDs or robustness across matrices (EDTA, heparin, serum), and does not mitigate the tube/site confounding that drives apparent performance in the primary analysis.
 :::
 
 ## Overall Assessment
@@ -161,7 +163,7 @@ The original study's high reported performance (98% accuracy) is **severely comp
 2. Geographic origin (Italy vs US)
 3. Diagnostic distribution (100% of neurological controls are EDTA)
 
-While some biological signal exists (22 tube-robust proteins identified), most published claims require major qualification.
+While some biological signal exists (22 geographically consistent proteins identified), most published claims require major qualification.
 
 ---
 
@@ -191,7 +193,7 @@ confound_table <- sample_metadata %>%
 kable(confound_table, align = c("l", rep("r", 4)))
 ```
 
-We conducted an independent methodological investigation with three objectives: (1) **quantify confounding severity** using reverse prediction and association metrics, (2) **evaluate ML model robustness** through leave-country-out cross-validation, and (3) **identify tube-robust biomarkers** via geographic stratification. Our multi-method validation framework provides converging evidence about the magnitude of confounding bias and its impact on the published claims.
+We conducted an independent methodological investigation with three objectives: (1) **quantify confounding severity** using reverse prediction and association metrics, (2) **evaluate ML model robustness** through leave-country-out cross-validation, and (3) **identify geographically consistent biomarkers** via geographic stratification. Our multi-method validation framework provides converging evidence about the magnitude of confounding bias and its impact on the published claims.
 
 We prespecified three hypotheses to test confounding and its clinical impact:
 
@@ -203,6 +205,20 @@ We prespecified three hypotheses to test confounding and its clinical impact:
 
 These prespecified criteria allow us to distinguish minor technical variability from systematic confounding that would prevent clinical deployment.
 
+::: {.callout-note appearance="minimal"}
+## <i class="bi bi-info-circle-fill"></i> Box 1: Understanding Confounding and Validation
+
+**For clinical readers unfamiliar with machine learning validation concepts:**
+
+- **What is confounding?** A non-biological factor (e.g., collection site or tube type) that varies systematically with diagnosis becomes a "shortcut" the model learns. Performance can appear excellent while the model is actually detecting workflow logistics, not disease biology.
+
+- **Pooled cross-validation vs. leave-site-out (LSO) validation:** Pooled CV mixes data from all sites in training/test splits, allowing site-specific and tube-specific signals to "leak" across partitions. LSO withholds entire sites (and their tube protocols) during training, revealing whether performance holds when those logistics change—the true test of clinical generalizability.
+
+- **Why tube type as a predictor is problematic:** Different anticoagulants (EDTA vs. heparin) alter measured protein levels through distinct biochemical mechanisms. When tube type correlates with diagnosis (as in this study: 100% of neurological controls used EDTA), the model learns "EDTA = not ALS" rather than biological ALS signatures. This produces high AUC in pooled CV but fails when tube types differ between training and deployment.
+
+- **What robust validation requires:** Leave-site-out cross-validation, balanced representation across tube types and sites, inclusion of other neurological diseases (ONDs) as comparators, verification of stability across matrices, and uncertainty quantification (confidence intervals, sensitivity analyses) that tests whether performance depends on logistics shortcuts.
+:::
+
 For readers interested in the statistical frameworks and computational details underlying our analysis, a Technical Appendix (Section 8) provides comprehensive documentation of all methods, software versions, and reproducibility protocols.
 
 ---
@@ -211,9 +227,77 @@ For readers interested in the statistical frameworks and computational details u
 
 ## Overview of Reanalysis Approach
 
-We conducted an independent methodological investigation to evaluate the potential impact of confounding bias arising from plasma collection tube type, which was used as a predictive feature in the original machine learning model. Our reanalysis employed a multi-method validation framework emphasizing geographic stratification and leave-country-out cross-validation to assess model generalizability and identify tube-robust biomarker candidates.
+We conducted an independent methodological investigation to evaluate the potential impact of confounding bias arising from plasma collection tube type, which was used as a predictive feature in the original machine learning model. Our reanalysis employed a multi-method validation framework emphasizing geographic stratification and leave-country-out cross-validation to assess model generalizability and identify geographically consistent biomarker candidates.
 
 All analyses were implemented in R (version 4.4.2) using a reproducible computational pipeline (`targets` framework) with version-controlled dependencies (`renv`).
+
+## Computational Pipeline Architecture
+
+```{r pipeline-dependency-graph}
+#| label: fig-pipeline-graph
+#| fig-cap: "Complete computational dependency graph. Each node represents a target (data, model, or visualization); edges show dependencies. Interactive: hover to explore, click to select."
+#| fig-width: 14
+#| fig-height: 10
+#| code-fold: true
+#| cache: false
+
+library(targets)
+library(visNetwork)
+
+# Determine project root - handle both manual and tar_quarto() rendering
+project_root <- if (file.exists("../_targets.R")) {
+  normalizePath("..")
+} else if (file.exists("_targets.R")) {
+  getwd()
+} else {
+  "/Users/biostochastics/chia_etal_2025_als"  # fallback to absolute path
+}
+
+# Change to project root to find _targets.R
+withr::with_dir(project_root, {
+  # Create network with custom styling
+  net <- tar_visnetwork(
+    targets_only = TRUE,
+    label = c("time", "size"),
+    level_separation = 150
+  )
+
+  # Apply dark theme with bright viridis colors
+  net %>%
+    visOptions(
+      highlightNearest = list(enabled = TRUE, degree = 1),
+      nodesIdSelection = TRUE
+    ) %>%
+    visInteraction(
+      navigationButtons = TRUE,
+      hover = TRUE
+    ) %>%
+    visLayout(randomSeed = 42) %>%
+    visNodes(
+      font = list(color = "white", size = 16, face = "arial", bold = TRUE),
+      borderWidth = 2,
+      shadow = list(enabled = TRUE, color = "#000000", size = 5, x = 2, y = 2)
+    ) %>%
+    visEdges(
+      color = list(color = "#666666", highlight = "#FDE724", hover = "#FDE724"),
+      smooth = list(enabled = TRUE, type = "cubicBezier", roundness = 0.5),
+      arrows = list(to = list(enabled = TRUE, scaleFactor = 0.5))
+    ) %>%
+    visPhysics(
+      stabilization = list(iterations = 200),
+      barnesHut = list(gravitationalConstant = -8000, springConstant = 0.001, springLength = 200)
+    )
+})
+```
+
+The dependency graph above shows the complete computational workflow implementing this investigation. Each node represents a computational target (data object, statistical model, or visualization), and directed edges indicate dependencies between targets. The `targets` framework ensures that:
+
+1. **Reproducibility:** All analyses run in the same order with identical inputs
+2. **Efficiency:** Only outdated targets rebuild when code changes
+3. **Transparency:** Full dependency structure is explicit and auditable
+4. **Version control:** All code and parameters are tracked in Git
+
+This architecture enables complete reproduction of all findings via a single `targets::tar_make()` command. See Appendix for execution details.
 
 ## Data Source and Study Design
 
@@ -386,7 +470,7 @@ To assess whether tube type effects dominated biological signals in the protein 
 - **Features:** All 2,868 proteins without pre-filtering (metadata excluded)
 - **Outcome:** Binary classification (EDTA vs. HEPARIN)
 - **Cross-validation:** 5-fold CV with stratified sampling
-- **Missing values:** Handled internally by `ranger` using the `na.action = "na.learn"` method (default). This approach tries missing values in both child nodes during splitting and selects the better direction based on split criterion. Note: This differs from surrogate splits used in `randomForestSRC`—`ranger` directly handles missings without using surrogate variables
+- **Missing values:** Pre-imputed separately by country using missForest before ML modeling. Dataset has extremely low missingness (0.01% overall), making imputation straightforward. See Missing Data Handling section below for details.
 - **Hyperparameters:** Grid search over `mtry` (√p, p/3) and `min.node.size` (5, 10)
 - **Performance metrics:** AUC-ROC, sensitivity, specificity
 - **Feature importance:** Permutation-based variable importance scaled to 0-100
@@ -408,7 +492,7 @@ The definitive test of model robustness was **leave-country-out cross-validation
 **Direction 1: Train on Italy (HEPARIN) → Test on US (EDTA)**
 
 1. Partition data by country (Italy training: n=`r lcv_results$italy_n`, US test: n=`r lcv_results$us_n`)
-2. Filter proteins with >20% missing values **in training set only** (prevents data leakage)
+2. No protein filtering applied (missingness is extremely low: 0.01% overall, already pre-imputed by country)
 3. Train Random Forest on Italian samples using 5-fold internal CV for hyperparameter tuning
 4. Apply trained model to held-out US samples without retraining
 5. Evaluate test performance (AUC, accuracy, sensitivity, specificity)
@@ -439,9 +523,9 @@ These are heuristic guidelines; acceptable performance degradation depends on cl
 
 ## Stratified Differential Protein Expression Analysis
 
-**Objective:** Identify tube-robust biomarkers
+**Objective:** Identify geographically consistent biomarkers
 
-To identify proteins with tube-robust ALS-specific signals, we performed differential expression analysis separately within each geographic cohort, thereby eliminating confounding by tube type and country.
+To identify proteins with geographically consistent ALS-specific signals, we performed differential expression analysis separately within each geographic cohort, thereby eliminating confounding by tube type and country.
 
 ### Statistical Framework
 
@@ -484,9 +568,9 @@ For comparison, we replicated the original study's pooled approach by combining 
 
 ## Meta-Analysis and Concordance Testing
 
-### Tube-Robust Biomarker Identification
+### Geographically Consistent Biomarker Identification
 
-Proteins were classified as "tube-robust" candidates if they met **all** of the following criteria:
+Proteins were classified as "geographically consistent" candidates if they met **all** of the following criteria:
 
 1. **Statistically significant in Italy:** FDR < 0.05 and log fold-change (logFC, the log₂ ratio of mean protein levels between groups) |logFC| > 0.5
 2. **Statistically significant in US:** FDR < 0.05 and |logFC| > 0.5
@@ -560,17 +644,17 @@ We applied Benjamini-Hochberg FDR correction separately within each analysis:
 
 ### Missing Data Handling
 
-**Machine learning models:** Random Forest in `ranger` handles missing values natively using the `na.action = "na.learn"` method (default). This approach:
+**All analyses:** Missing values (0.01% overall) were imputed **once at data loading** using **missForest**, applied **separately for Italy and US cohorts** to prevent cross-country information leakage. This approach:
 
-- Ignores missing values when calculating initial split criterion (impurity decrease)
-- For the best split, tries all missing values in both child nodes
-- Selects the direction that maximizes the split criterion
-- Saves this "default direction" for prediction
-- **Note:** This differs from surrogate splits (used in `randomForestSRC`); `ranger` does not use surrogate variables but directly handles missings within each split
+- Uses random forest-based imputation (`missForest::missForest()`) well-suited for high-dimensional proteomics data
+- Applied independently to Italy (HEPARIN) and US (EDTA) subsets before any downstream analysis
+- Prevents cross-country information leakage during imputation (Italy samples never inform US imputation and vice versa)
+- Extremely low missingness (0.01% overall, max 0.14% per protein) makes imputation straightforward
+- Imputed data stored in pipeline target `data_imputed` and used for all subsequent analyses
 
-**Differential expression:** Proteins with >20% missing values were excluded prior to analysis in leave-country-out cross-validation to prevent data leakage (filtering applied only to training set). For pooled CV and reverse prediction tests, all proteins were retained and missings handled by `ranger`.
+**Differential expression:** Proteins with >20% missing values would be excluded prior to `limma` analysis (standard practice). However, no proteins exceeded this threshold in the current dataset.
 
-**No imputation** was performed to avoid introducing artificial structure into the data.
+**Rationale:** Pre-imputation with geographic stratification maintains methodological rigor by ensuring Italy and US cohorts remain informationally separate throughout the entire analysis pipeline, consistent with the study's focus on geographic confounding.
 
 ### Sample Size and Power
 
@@ -582,9 +666,9 @@ We acknowledge the following limitations:
 
 1. **Confounding non-identifiability:** Perfect correlation between tube type, country, batch, and storage protocol means we cannot definitively attribute effects to any single factor. Our conclusions apply to the aggregate of these technical artifacts.
 
-2. **No external validation:** We reanalyzed existing data without access to independent validation cohorts. Prospective tube-balanced studies are required to confirm tube-robust biomarkers.
+2. **No external validation:** We reanalyzed existing data without access to independent validation cohorts. Prospective tube-balanced studies are required to confirm geographically consistent biomarkers.
 
-3. **Limited US ALS sample size:** Power constraints in the US cohort (n=40 ALS) may cause us to underestimate the number of true tube-robust proteins (increased false negatives, but Type I error remains controlled).
+3. **Limited US ALS sample size:** Power constraints in the US cohort (n=40 ALS) may cause us to underestimate the number of true geographically consistent proteins (increased false negatives, but Type I error remains controlled).
 
 ---
 
@@ -615,6 +699,8 @@ We acknowledge the following limitations:
 ---
 
 # <i class="bi bi-bar-chart"></i> Results
+
+**Our multi-method investigation provides converging evidence that the reported ALS diagnostic model is severely compromised by confounding.** Three independent analyses demonstrate that tube type and geographic origin dominate the signal: (1) Cramér's V=1.0 indicates perfect site-tube correlation, (2) leave-country-out validation reveals 18.2% AUC inflation and 1.8% sensitivity collapse, and (3) only 26.9% of 'significant' proteins replicate across geographic strata. Even the 22 geographically consistent protein candidates show substantial residual confounding, with 50% exhibiting significant tube effects in healthy controls.
 
 ## Confounding Quantification
 
@@ -657,6 +743,8 @@ Using @cohen1988 effect size conventions for contingency tables with df=2: value
 :::
 
 ## Reverse Prediction Test: Strong Evidence for Technical Confounding
+
+**Proteins achieve near-perfect accuracy (AUC ≥0.999) at predicting plasma collection tube type, demonstrating that technical artifacts dominate the biological signal.** This reverse prediction test—training a classifier to predict tube type (EDTA vs. heparin) from protein measurements—reveals that even the 22 'geographically consistent' biomarker candidates retain strong tube-type signatures (AUC=0.916). When technical metadata can be reconstructed with this accuracy from supposedly biological features, the features are contaminated by confounding and cannot reliably represent disease-specific biology.
 
 ```{r reverse-prediction}
 #| code-fold: true
@@ -1315,7 +1403,7 @@ ggvenn(
   )
 ```
 
-## Tube-Robust Biomarker Candidates
+## Geographically Consistent Biomarker Candidates
 
 ### Meta-Analysis Results
 
@@ -1326,7 +1414,7 @@ These are the **ONLY** proteins that show consistent ALS signals across both tub
 ```{r concordant-proteins}
 #| echo: false
 #| label: tbl-concordant
-#| tbl-cap: "Top 10 tube-robust biomarker candidates"
+#| tbl-cap: "Top 10 geographically consistent biomarker candidates"
 
 protein_concordance %>%
   filter(sig_both, same_direction) %>%
@@ -1395,7 +1483,7 @@ The 78 proteins significant in pooled analysis do show reasonable concordance be
 3. **72% of pooled proteins fail stratified replication**: Only 22/78 (28%) are significant in BOTH cohorts
 4. **Geographic validation issues persist**: ML models trained on pooled data show reduced performance in leave-country-out CV (18% performance drop: from AUC = 0.95 to 0.77)
 5. **Reverse prediction remains problematic**: Proteins discriminate tube types with very high accuracy (AUC = 0.999), indicating pervasive technical effects
-6. **Residual confounding in "robust" proteins**: Even the 22 tube-robust proteins predict tube type with AUC = 0.89
+6. **Residual confounding in "consistent" proteins**: Even the 22 geographically consistent proteins predict tube type with AUC = 0.89
 
 **Critical point for ML models:**
 
@@ -1406,22 +1494,22 @@ The moderate-to-strong correlation (Pearson r ≈ 0.79) among pooled-significant
 
 ### Biological Interpretation
 
-**NEFL (Neurofilament Light Chain)** is a well-established neuroaxonal injury biomarker and likely represents a genuine biological signal in ALS. However, our analyses demonstrate that its effect size in this dataset is substantially contaminated by the Italy-HEPARIN/US-EDTA confound. Among the 22 "tube-robust" proteins that show significance in both strata, only a small fraction survive without residual tube effects. Importantly:
+**NEFL (Neurofilament Light Chain)** is a well-established neuroaxonal injury biomarker and likely represents a genuine biological signal in ALS. However, our analyses demonstrate that its effect size in this dataset is substantially contaminated by the Italy-HEPARIN/US-EDTA confound. Among the 22 "geographically consistent" proteins that show significance in both strata, only a small fraction survive without residual tube effects. Importantly:
 
 - Only 22 proteins survive rigorous geographic validation (out of 78 pooled)
 - **72% of pooled proteins fail to replicate** across tube types
 - Effect sizes are inconsistent (r = 0.03) between cohorts
-- Even tube-robust candidates retain substantial tube signal (see Residual Confounding section)
+- Even geographically consistent candidates retain substantial tube signal (see Residual Confounding section)
 
 **Verdict:** While NEFL and a small subset of proteins remain clinically relevant, their magnitudes in the pooled analysis are inflated and their relative rankings among biomarkers are distorted by non-biological factors. Most of the published protein list requires prospective validation in tube-balanced studies.
 
-### Visualizing Country/Tube Effects in Tube-Robust Proteins
+### Visualizing Country/Tube Effects in Geographically Consistent Proteins
 
-To demonstrate that even "tube-robust" proteins exhibit systematic country/tube effects, we examine the distribution of NPX values for ALL tube-robust proteins, comparing ALS vs. Healthy controls across Italy (HEPARIN) and US (EDTA) cohorts.
+To demonstrate that even "geographically consistent" proteins exhibit systematic country/tube effects, we examine the distribution of NPX values for ALL geographically consistent proteins, comparing ALS vs. Healthy controls across Italy (HEPARIN) and US (EDTA) cohorts.
 
 ```{r tube-robust-protein-viz}
 #| label: fig-tube-robust-viz
-#| fig-cap: "All 'Tube-Robust' Proteins Show Strong Country/Tube Effects"
+#| fig-cap: "All 'Geographically Consistent' Proteins Show Strong Country/Tube Effects"
 #| fig-width: 12
 #| fig-height: 40
 #| echo: false
@@ -1443,7 +1531,7 @@ if (!exists("tube_effects_healthy")) {
   tar_load(tube_effects_healthy)
 }
 
-# 1. Identify ALL tube-robust proteins (not just top 15).
+# 1. Identify ALL geographically consistent proteins (not just top 15).
 #    These are proteins significant in both cohorts with the same direction of effect.
 #    We arrange them by combined_p to order the facets in the final plot.
 tube_robust_top15_assays <- protein_concordance %>%
@@ -1451,11 +1539,11 @@ tube_robust_top15_assays <- protein_concordance %>%
   arrange(combined_p) %>%
   pull(Assay)
 
-# Combine tube-robust proteins with ALL original biomarkers to show the full picture
+# Combine geographically consistent proteins with ALL original biomarkers to show the full picture
 all_proteins_to_plot <- unique(c(tube_robust_top15_assays, original_biomarkers))
 
 # 2. Prepare the data for plotting.
-#    - Filter the main dataset to include tube-robust proteins AND all original biomarkers.
+#    - Filter the main dataset to include geographically consistent proteins AND all original biomarkers.
 #    - Exclude 'Neurological_control' to focus on the ALS vs. Healthy comparison.
 #    - Convert 'Assay' to a factor with levels ordered by significance for a clean plot layout.
 #    - Add marker for original study biomarkers.
@@ -1570,8 +1658,8 @@ ggplot(plot_data_tube_effects, aes(x = Diagnosis_clean, y = NPX, fill = Diagnosi
     name = "Group"
   ) +
   labs(
-    title = "Tube-Robust Proteins + All Original Biomarkers Show Country/Tube Effects",
-    subtitle = "NPX distribution by diagnosis (ALS vs Healthy), combining tube-robust proteins and ALL 17 original biomarkers. P-values (lime green if p < 0.05, limma-adjusted for age & sex) and effect sizes (ES = logFC from limma, EDTA - HEPARIN) compare tube types within each diagnosis.\n★ = Original study biomarker from Figure 4a",
+    title = "Geographically Consistent Proteins + All Original Biomarkers Show Country/Tube Effects",
+    subtitle = "NPX distribution by diagnosis (ALS vs Healthy), combining geographically consistent proteins and ALL 17 original biomarkers. P-values (lime green if p < 0.05, limma-adjusted for age & sex) and effect sizes (ES = logFC from limma, EDTA - HEPARIN) compare tube types within each diagnosis.\n★ = Original study biomarker from Figure 4a",
     x = "Diagnosis",
     y = "Protein Expression (NPX)"
   ) +
@@ -1587,7 +1675,7 @@ ggplot(plot_data_tube_effects, aes(x = Diagnosis_clean, y = NPX, fill = Diagnosi
 ::: {.callout-important appearance="minimal"}
 ## Key Observation
 
-The visualization combines tube-robust proteins with **ALL 17 original biomarkers from the authors' Figure 4a** to demonstrate that **systematic tube type differences exist across both sets**. Even within healthy controls, we observe substantial EDTA vs. HEPARIN differences (shown as effect sizes and p-values). This pattern demonstrates that:
+The visualization combines geographically consistent proteins with **ALL 17 original biomarkers from the authors' Figure 4a** to demonstrate that **systematic tube type differences exist across both sets**. Even within healthy controls, we observe substantial EDTA vs. HEPARIN differences (shown as effect sizes and p-values). This pattern demonstrates that:
 
 1. **Country/tube effects are present in disease-free individuals**, proving these differences are technical artifacts, not ALS biology
 2. **ALS vs. Healthy separation varies by country/tube context**, indicating entanglement of biological and technical signals
@@ -1597,9 +1685,9 @@ The visualization combines tube-robust proteins with **ALL 17 original biomarker
 This visual evidence reinforces the quantitative findings from our three convergent tests (reverse prediction, healthy control analysis, effect decomposition) that residual confounding persists in all candidate biomarkers.
 :::
 
-## Residual Confounding in "Tube-Robust" Proteins
+## Residual Confounding in "Geographically Consistent" Proteins
 
-**Critical Question:** Are the 22 "tube-robust" proteins (significant in both Italy and US with concordant direction) truly independent of tube type effects, or do they still retain substantial technical confounding?
+**Critical Question:** Are the 22 "geographically consistent" proteins (significant in both Italy and US with concordant direction) truly independent of tube type effects, or do they still retain substantial technical confounding?
 
 Just because a protein is significant in BOTH cohorts doesn't prove it's free from tube type artifacts. It could be: (1) true biomarker + NO tube effect (ideal), (2) true biomarker + tube effect (entangled), or (3) pure tube artifact spuriously associated with disease. With perfect confounding, we cannot distinguish cases #2 and #3, but we CAN quantify the magnitude of residual tube type signal using two complementary approaches below, which together with the reverse prediction test (Section 3.2) provide converging evidence.
 
@@ -1620,7 +1708,7 @@ if (!exists("tube_effects_healthy")) {
 
 ### Test 1: Tube Effects in Healthy Controls (Disease-Free Test)
 
-As demonstrated in [Figure @fig-tube-robust-viz], even "tube-robust" proteins show systematic differences between tube types within disease-free individuals. Here we quantify these effects statistically.
+As demonstrated in [Figure @fig-tube-robust-viz], even "geographically consistent" proteins show systematic differences between tube types within disease-free individuals. Here we quantify these effects statistically.
 
 ```{r healthy-tube-effects-plot}
 #| code-fold: true
@@ -1634,7 +1722,7 @@ library(ggplot2)
 library(dplyr)
 
 # Prepare plot data from limma results
-# Filter to only tube-robust proteins (same as old analysis)
+# Filter to only geographically consistent proteins (same as old analysis)
 plot_data <- tube_effects_healthy %>%
   dplyr::filter(Assay %in% tube_robust_top15_assays) %>%
   dplyr::arrange(adj.P.Val) %>%
@@ -1658,7 +1746,7 @@ ggplot(plot_data, aes(x = logFC, y = protein, color = significant)) +
   labs(
     title = "Tube Type Effects in Healthy Controls (Disease-Free)",
     subtitle = sprintf(
-      "⚠️ %d/%d tube-robust proteins differ by tube type WITHOUT disease present\nLimma analysis adjusted for age & sex",
+      "⚠️ %d/%d geographically consistent proteins differ by tube type WITHOUT disease present\nLimma analysis adjusted for age & sex",
       n_sig, n_total
     ),
     x = "Effect Size in NPX (US/EDTA - Italy/HEPARIN, logFC)",
@@ -1673,7 +1761,7 @@ ggplot(plot_data, aes(x = logFC, y = protein, color = significant)) +
 
 **Rationale:** If a protein differs between Italy/HEPARIN and US/EDTA in disease-free individuals, that difference MUST be a technical artifact (or population genetics), NOT ALS biology.
 
-**Result: `r sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays)` out of `r sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays)` tube-robust proteins (`r sprintf("%.1f%%", 100 * sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays) / sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays))`) show significant tube effects in healthy controls (limma, FDR < 0.05)**
+**Result: `r sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays)` out of `r sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays)` geographically consistent proteins (`r sprintf("%.1f%%", 100 * sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays) / sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays))`) show significant tube effects in healthy controls (limma, FDR < 0.05)**
 
 #### Distribution of Tube Effect Sizes Across All Proteins
 
@@ -1721,7 +1809,7 @@ The zoomed distribution (@fig-tube-distribution-zoomed) focuses on the -1000% to
 ```{r healthy-tube-summary}
 #| echo: false
 #| label: tbl-healthy-tube
-#| tbl-cap: "Top tube-robust proteins with tube effects in disease-free individuals (limma-adjusted for age & sex)"
+#| tbl-cap: "Top geographically consistent proteins with tube effects in disease-free individuals (limma-adjusted for age & sex)"
 
 tube_effects_healthy %>%
   filter(Assay %in% tube_robust_top15_assays, adj.P.Val < 0.05) %>%
@@ -1738,16 +1826,16 @@ tube_effects_healthy %>%
 ::: {.callout-important appearance="minimal"}
 ## Critical Finding
 
-**Many tube-robust proteins differ by tube type even WITHOUT disease present!**
+**Many geographically consistent proteins differ by tube type even WITHOUT disease present!**
 
 Using limma analysis (adjusted for age & sex):
 
 - Multiple proteins show significant tube effects in disease-free individuals (FDR < 0.05)
 - These differences occur in the **absence of ALS**, proving they reflect technical artifacts
 - P-values are now properly adjusted for covariates using empirical Bayes
-- `r sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays)` of `r sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays)` tube-robust proteins remain significant after FDR correction
+- `r sum(tube_effects_healthy$adj.P.Val < 0.05 & tube_effects_healthy$Assay %in% tube_robust_top15_assays)` of `r sum(tube_effects_healthy$Assay %in% tube_robust_top15_assays)` geographically consistent proteins remain significant after FDR correction
 
-This definitively demonstrates that even "tube-robust" candidates are contaminated by technical confounding.
+This definitively demonstrates that even "geographically consistent" candidates are contaminated by technical confounding.
 :::
 
 ### Test 2: Effect Size Decomposition (Biology vs Artifacts)
@@ -1849,7 +1937,7 @@ ggplot(plot_data, aes(x = abs_disease_effect, y = abs_tube_effect, color = categ
 
 **Question:** Is the tube type effect comparable to or larger than the disease effect?
 
-For each tube-robust protein, we calculated:
+For each geographically consistent protein, we calculated:
 - **Disease effect:** |ALS - Control| (adjusted for country, age, sex)
 - **Tube effect:** |US/EDTA - Italy/HEPARIN| (adjusted for diagnosis, age, sex)
 - **Ratio:** |tube effect| / |disease effect|
@@ -1902,10 +1990,10 @@ effect_decomposition %>%
 Three independent tests converge on the same conclusion:
 
 1. **Reverse prediction (AUC = 0.999, Section 3.2):** ALL proteins nearly perfectly predict tube type
-2. **Healthy controls (50% significant):** Half of tube-robust proteins show tube effects without disease present
-3. **Effect decomposition (median ratio = 0.22):** Tube effects are 20-50% as large as disease effects in tube-robust proteins
+2. **Healthy controls (50% significant):** Half of geographically consistent proteins show tube effects without disease present
+3. **Effect decomposition (median ratio = 0.22):** Tube effects are 20-50% as large as disease effects in geographically consistent proteins
 
-**Verdict:** Even the most conservative "tube-robust" biomarker candidates remain substantially entangled with technical artifacts. While some biological signal exists (especially for NEFL), perfect confounding prevents definitive separation of true ALS biology from tube type effects. These proteins should be treated as **prioritized candidates for validation** in tube-balanced studies, NOT as validated biomarkers ready for clinical deployment.
+**Verdict:** Even the most conservative "geographically consistent" biomarker candidates remain substantially entangled with technical artifacts. While some biological signal exists (especially for NEFL), perfect confounding prevents definitive separation of true ALS biology from tube type effects. These proteins should be treated as **prioritized candidates for validation** in tube-balanced studies, NOT as validated biomarkers ready for clinical deployment.
 
 ---
 
@@ -1923,7 +2011,7 @@ Three independent analytical approaches converge on a consistent conclusion: the
 
 This is not a minor methodological concern—it represents **substantial confounding** that makes the original diagnostic model non-generalizable and the published protein list largely unreliable.
 
-**What CAN be concluded with confidence:** The dataset itself is valuable and rigorously collected. NEFL (Neurofilament Light Chain) is elevated in ALS—a well-established finding replicated here. Approximately 22 proteins show tube-robust signals worthy of further investigation, and some genuine biological ALS signal exists beneath the technical artifacts.
+**What CAN be concluded with confidence:** The dataset itself is valuable and rigorously collected. NEFL (Neurofilament Light Chain) is elevated in ALS—a well-established finding replicated here. Approximately 22 proteins show geographically consistent signals worthy of further investigation, and some genuine biological ALS signal exists beneath the technical artifacts.
 
 **What CANNOT be concluded (requires major qualification or retraction):** The "98% accuracy" claim is severely inflated; realistic cross-site performance is approximately 77% AUC. Tube type should never have been included as a predictive feature. Neurological control comparisons are confounded (100% EDTA) and not interpretable. The majority (72%) of "significant" proteins fail geographic validation and likely represent false discoveries. The proposed diagnostic model is not currently generalizable for clinical use without complete redesign.
 
@@ -1978,7 +2066,7 @@ This reanalysis demonstrates that rigorous methodological investigation can reve
 **What CAN Be Concluded:**
 
 - Valuable multi-site proteomics dataset collected
-- NEFL and ~20 other proteins show tube-robust signals
+- NEFL and ~20 other proteins show geographically consistent signals
 - Rigorous OLINK quality control performed
 - Significant effort in data collection
 
@@ -1994,7 +2082,7 @@ This reanalysis demonstrates that rigorous methodological investigation can reve
 **Before Clinical Translation:**
 
 1. **Harmonize tube types** across all sites (use single tube type)
-2. **Use only 22 tube-robust proteins** as starting panel
+2. **Use only 22 geographically consistent proteins** as starting panel
 3. **Design leave-site-out validation** from the start
 4. **Set realistic expectations** (~0.75-0.80 AUC)
 5. **Include multiple geographic cohorts**
@@ -2029,7 +2117,7 @@ Models trained on one geographic cohort fail markedly when tested on another, wi
 
 Only **26.9% of pooled significant proteins replicate in both geographic strata** with concordant direction. The majority of "significant" proteins identified in pooled analysis (73.1%) represent likely false discoveries driven by confounding: these proteins show associations with diagnosis in pooled data but fail to replicate when tube type and geography are controlled through stratification. This extraordinarily low replication rate indicates that most published biomarker claims are artifacts of the confounded study design.
 
-**3. Residual Confounding in "Tube-Robust" Candidates**
+**3. Residual Confounding in "Geographically Consistent" Candidates**
 
 Even the 22 proteins that survive rigorous geographic stratification (significant in both Italy and US with concordant direction) show substantial residual confounding:
 
@@ -2269,7 +2357,7 @@ When ML models are trained at academic centers using one tube type and deployed 
 - Post-market surveillance may not stratify performance by laboratory protocol
 - Result: **Approved models fail in real-world heterogeneous deployment**
 
-### A7. Why "Tube-Robust" Proteins Still Show Confounding {.unlisted}
+### A7. Why "Geographically Consistent" Proteins Still Show Confounding {.unlisted}
 
 **Three Converging Tests (This Study)**
 
@@ -2412,66 +2500,7 @@ This case study exemplifies broader patterns in ML medical diagnostics where mul
 
 This appendix provides complete transparency into the computational pipeline that generated all results in this report. All computations are managed by the `targets` pipeline, ensuring reproducibility and dependency tracking. Every figure, table, and statistic in this analysis is programmatically generated and version-controlled.
 
-### Pipeline Architecture {.unlisted}
-
-```{r pipeline-dependency-graph}
-#| label: fig-pipeline-graph
-#| fig-cap: "Complete dependency graph showing all computational targets"
-#| fig-width: 14
-#| fig-height: 10
-#| code-fold: true
-#| cache: false
-
-library(targets)
-library(visNetwork)
-
-# Determine project root - handle both manual and tar_quarto() rendering
-project_root <- if (file.exists("../_targets.R")) {
-  normalizePath("..")
-} else if (file.exists("_targets.R")) {
-  getwd()
-} else {
-  "/Users/biostochastics/chia_etal_2025_als"  # fallback to absolute path
-}
-
-# Change to project root to find _targets.R
-withr::with_dir(project_root, {
-  # Create network with custom styling
-  net <- tar_visnetwork(
-    targets_only = TRUE,
-    label = c("time", "size"),
-    level_separation = 150
-  )
-
-  # Apply dark theme with bright viridis colors
-  net %>%
-    visOptions(
-      highlightNearest = list(enabled = TRUE, degree = 1),
-      nodesIdSelection = TRUE
-    ) %>%
-    visInteraction(
-      navigationButtons = TRUE,
-      hover = TRUE
-    ) %>%
-    visLayout(randomSeed = 42) %>%
-    visNodes(
-      font = list(color = "white", size = 16, face = "arial", bold = TRUE),
-      borderWidth = 2,
-      shadow = list(enabled = TRUE, color = "#000000", size = 5, x = 2, y = 2)
-    ) %>%
-    visEdges(
-      color = list(color = "#666666", highlight = "#FDE724", hover = "#FDE724"),
-      smooth = list(enabled = TRUE, type = "cubicBezier", roundness = 0.5),
-      arrows = list(to = list(enabled = TRUE, scaleFactor = 0.5))
-    ) %>%
-    visPhysics(
-      stabilization = list(iterations = 200),
-      barnesHut = list(gravitationalConstant = -8000, springConstant = 0.001, springLength = 200)
-    )
-})
-```
-
-The dependency graph above shows the complete computational workflow. Each node represents a target (data object, model, or visualization), and edges show dependencies. Node size reflects execution time, while colors indicate target status.
+**Pipeline Architecture:** See @fig-pipeline-graph in the Methods section for the complete computational dependency graph.
 
 ### Execution Summary {.unlisted}
 
@@ -2696,7 +2725,7 @@ sessioninfo::session_info()
 - @fig-protein-counts: Distribution of significant proteins by cohort
 - @fig-protein-venn: Venn diagram showing overlap of significant proteins
 - @fig-effect-correlations: Correlation of effect sizes between Italy and US cohorts
-- @fig-tube-robust-viz: Tube type robustness analysis
+- @fig-tube-robust-viz: Geographic consistency analysis
 - @fig-healthy-tube: Tube type effects in healthy controls
 - @fig-effect-decomp: Decomposition of observed effects
 - @fig-pipeline-graph: Pipeline dependency graph
